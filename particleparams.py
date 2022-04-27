@@ -1,5 +1,4 @@
 import numpy as np
-from params import PFX, PFXR, PFXI
 import os
 import json
 import sys

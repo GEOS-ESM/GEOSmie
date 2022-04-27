@@ -5,18 +5,12 @@ from scipy.interpolate import interp1d
 from scipy.stats import lognorm
 import os
 import numba
-import time
 import hydrophobic
-
 import sys
-sys.path.insert(0, 'pymiecoated')
 
 from pymiecoated.mie_coated import MultipleMie
-import cProfile, pstats, io
 
 import particleparams as pp
-
-from params import PFX, PFXR, PFXI
 
 """
 These govern how integration and dimensions etc are done, so define them here
