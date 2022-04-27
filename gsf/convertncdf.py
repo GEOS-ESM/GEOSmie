@@ -26,7 +26,6 @@ from numpy.polynomial.legendre import leggauss
 import numba
 import multiprocessing
 import time
-import matplotlib.pyplot as plt
 import shutil
 
 # x is cos(ang)
