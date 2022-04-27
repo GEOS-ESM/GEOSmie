@@ -33,6 +33,10 @@ python runbands.py --filename filename.nc
 
 where filename.nc should be an output file from runoptics.py
 
+For additional options, see
+
+python runbands.py --help
+
 ## Mie code
 
 Before any spherical aerosol calculations can be done the Mie code needs to be installed.
@@ -66,3 +70,7 @@ To run the conversion code, assuming the code has been compiled and you are in t
 python rungsf.py --filename ../filename.nc
 
 where ../filename.nc should be an output file from runoptics.py
+
+For additional options, see
+
+python rungsf.py --help
