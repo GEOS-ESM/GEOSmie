@@ -13,19 +13,21 @@ The package consists of the following parts:
 
 The main single-scattering property calculator consists of two parts: calculation at individual wavelengths, and calculation over wavelength bands. The first part is always necessary, the second needs to be run only if wavelength band integrated files are necessary.
 
-### Individual wavelengths
+### Calculations at individual wavelengths
 
 To calculate single-scattering properties at individual wavelengths:
 
 python runoptics.py --name path/to/file.json
 
-Where file.json defines all of the parameters of the calculation. ".json" can be omitted from the runoptics.py command as a convenience. See JSON examples under geosparticles/ for current GEOS aerosol particles. runoptics.py has a few additional options, use
+Where file.json defines all of the parameters of the calculation. ".json" can be omitted from the runoptics.py command as a convenience. See JSON examples under geosparticles/ for current GEOS aerosol particles. For users who only want single-scattering properties at individual wavelengths this is all that is needed, and further processing is not needed.
+
+runoptics.py has a few additional options, use
 
 python runoptics.py --help
 
 to see them
 
-### Wavelength bands
+### Calculations over wavelength bands
 
 To calculate single-scattering properties at wavelength bands:
 
