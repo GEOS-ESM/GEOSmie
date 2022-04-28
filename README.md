@@ -2,10 +2,10 @@ Table of Contents
 =================
 
 * [GEOSmie](#geosmie)
+   * [Mie code](#mie-code)
    * [Main code](#main-code)
       * [Calculations at individual wavelengths](#calculations-at-individual-wavelengths)
       * [Calculations over wavelength bands](#calculations-over-wavelength-bands)
-   * [Mie code](#mie-code)
    * [GSF expansion code](#gsf-expansion-code)
 
 <!-- Created by https://github.com/ekalinin/github-markdown-toc -->
@@ -17,9 +17,29 @@ See [here (TBD)](tbd) for a full documentation. Below is a brief summary of the 
 
 The package consists of the following parts:
 
-- Main code (root directory), which can calculate single-scattering and bulk optical properties for both individual wavelengths and wavelength bands
 - Mie code (pymiecoated/)
+- Main code (root directory), which can calculate single-scattering and bulk optical properties for both individual wavelengths and wavelength bands
 - Generalized spherical function expansion code (gsf/)
+
+## Mie code
+
+Before any spherical aerosol calculations can be done the Mie code needs to be installed.
+
+Starting in the root directory of this repository:
+
+```bash
+cd pymiecoated
+python setup.py install
+```
+
+In some systems the following may be needed instead:
+
+```bash
+python setup.py install --user
+```
+
+The Mie code does not need to be used directly; runoptics.py calls it as needed. The functions within the module can be used directly but that is beyond the scope of this README.
+
 
 ## Main code
 
@@ -58,25 +78,6 @@ For additional options, see
 ```bash
 python runbands.py --help
 ```
-
-## Mie code
-
-Before any spherical aerosol calculations can be done the Mie code needs to be installed.
-
-Starting in the root directory of this repository:
-
-```bash
-cd pymiecoated
-python setup.py install
-```
-
-In some systems the following may be needed instead:
-
-```bash
-python setup.py install --user
-```
-
-The Mie code does not need to be used directly; runoptics.py calls it as needed. The functions within the module can be used directly but that is beyond the scope of this README.
 
 ## GSF expansion code
 
