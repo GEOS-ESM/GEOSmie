@@ -1,5 +1,17 @@
+Table of Contents
+=================
+
+* [GEOSmie](#geosmie)
+   * [Main code](#main-code)
+      * [Calculations at individual wavelengths](#calculations-at-individual-wavelengths)
+      * [Calculations over wavelength bands](#calculations-over-wavelength-bands)
+   * [Mie code](#mie-code)
+   * [GSF expansion code](#gsf-expansion-code)
+
+<!-- Created by https://github.com/ekalinin/github-markdown-toc -->
+
+
 # GEOSmie
-GEOSmie
 
 See [here (TBD)](tbd) for a full documentation. Below is a brief summary of the structure and usage of the package.
 
@@ -46,6 +58,7 @@ Before any spherical aerosol calculations can be done the Mie code needs to be i
 Starting in the root directory of this repository:
 
 cd pymiecoated
+
 python setup.py install
 
 In some systems the following may be needed instead:
@@ -63,6 +76,7 @@ The code uses spher_expan.f code by Michael Mishchenko. Before conversions can b
 Starting in the root directory of this repository:
 
 cd gsf
+
 gfortran spher_expan.f
 
 Other compilers beyond gfortran may work. Testing has been performed with gfortran 11.2.0 on Gentoo.
