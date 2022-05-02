@@ -38,7 +38,7 @@ In some systems the following may be needed instead:
 python setup.py install --user
 ```
 
-The Mie code does not need to be used directly; runoptics.py calls it as needed. The functions within the module can be used directly but that is beyond the scope of this README.
+The Mie code does not need to be used directly; runoptics.py calls it as needed. The functions within the module can be used directly to run custom Mie simulations but that is beyond the scope of this README.
 
 
 ## Main code
