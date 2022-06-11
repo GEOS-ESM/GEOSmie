@@ -215,8 +215,8 @@ def createNCDF(ncdfID, oppfx, rarr, rharr, lambarr, ang):
   usezlib = False # no compression
 
   vardict = {} # holds all the variable metadata
-  vardict['radius'] = {'units': 'm', \
-  'long_name': 'dry particle effective radius' 
+  vardict['radius'] = {'units': 'dimensionless', \
+  'long_name': 'radius bin index (1-indexed)'
   }
 
   vardict['nPol'] = {'units': 'dimensionless', \
@@ -339,7 +339,8 @@ def createNCDF(ncdfID, oppfx, rarr, rharr, lambarr, ang):
     ncdf.variables[var].long_name = vardict[var]['long_name']
     ncdf.variables[var].units = vardict[var]['units']
 
-  idR[:] = rarr
+  # idR is a 1-indexed bin index
+  idR[:] = range(1,len(rarr)+1)
   idRH[:] = rharr
   idLambda[:] = lambarr
   idAng[:] = ang
