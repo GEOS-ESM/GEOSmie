@@ -24,7 +24,7 @@ from numpy import sqrt
 import numpy as np
 import numba
 from scipy.special import jv, yv
-from .mie_coeffs import MieCoeffs, single_mie_coeff_numba
+from .mie_coeffs import MieCoeffs, single_mie_coeff_numba, coated_mie_coeff
 from .mie_aux import Cache
 from .mie_props import mie_props, mie_props_raw, mie_S12, mie_S12_pt, mie_ptnumba, mie_S12_backend_pt
 
@@ -52,14 +52,13 @@ class MultipleMie(object):
       params = single_mie_coeff_numba(eps,mu,xx,jvarr,yvarr)
       return self.calculateS12WithParams(xx, jvarr, yvarr, params)
 
-    def calculateS12WithParams(self, xx, jvarr, yvarr, params):
+    def calculateS12WithParams(self, jvarr, yvarr, params):
       miean, miebn, nmax = params
       thisparr = self.parr[nmax]
       thistarr = self.tarr[nmax]
       return runS12Loop(nmax, miean, miebn, thisparr, thistarr, self.costarr)
     
     def calculateS12SizeRange(self, mr, mi):
-      eps = complex(mr, mi) ** 2
       mu = 1.0
       prokeys = ['qext', 'qsca', 'qabs', 'asy', 'qb', 'qratio']
       retkeys = ['s12'] + prokeys
@@ -73,13 +72,22 @@ class MultipleMie(object):
         else:
           jvarr = self.jvdic[thisxx] 
           yvarr = self.yvdic[thisxx]
-        if self.yArr == None: # single-layer sphere
+        if self.yArr is None: # single-layer sphere
+          eps = complex(mr, mi) ** 2
           coeffs = single_mie_coeff_numba(eps,mu,thisxx,jvarr,yvarr)
+
+          # if no outer shell then size is the size of the core
+          usesize = thisxx
         else:
           # TODO not optimized
-          coeffs = coated_mie_coeff_numba(eps,mu,thisxx,self.yArr[xxi])
-        ret['s12'][xxi] = self.calculateS12WithParams(thisxx, jvarr, yvarr, coeffs)
-        props = mie_props_raw(coeffs,thisxx)
+          # mr, mi are arrays for core-shell
+          eps = [complex(mr[i], mi[i]) for i in range(len(mr))]
+          coeffs = coated_mie_coeff(eps[0], eps[1], thisxx, self.yArr[xxi])
+
+          # if outer shell is defined use it in mie_props
+          usesize = self.yArr[xxi] 
+        ret['s12'][xxi] = self.calculateS12WithParams(jvarr, yvarr, coeffs)
+        props = mie_props_raw(coeffs,usesize)
         qext, qsca, qabs, qb, asy, qratio = props
         props = {"qext":qext, "qsca":qsca, "qabs":qabs, "qb":qb, "asy":asy, "qratio":qratio}
 
@@ -151,8 +159,13 @@ class MultipleMie(object):
       self.preCalculatePT()
 
     def preCalculateBessel(self): # function of size only
-      self.jvdic = self._getJVDic(self.xArr)
-      self.yvdic = self._getYVDic(self.xArr)
+      if self.yArr is not None:
+        useSizes = np.concatenate([self.xArr, self.yArr])
+      else:
+        useSizes = self.xArr
+
+      self.jvdic = self._getJVDic(useSizes)
+      self.yvdic = self._getYVDic(useSizes)
       # experimental recurrent bessel, accuracy issues
       #jvdic = getRJVDic(xarr)
       #yvdic = getRYVDic(xarr, jvdic)
@@ -162,7 +175,12 @@ class MultipleMie(object):
       Pre-calculate pi, tau arrays
       """
       prevnmax = None
-      for thisx in self.xArr:
+      if self.yArr is not None:
+        useSizes = np.concatenate([self.xArr, self.yArr])
+      else:
+        useSizes = self.xArr
+
+      for thisx in useSizes:
         thisnmax = int(round(2+thisx+4*thisx**(1.0/3.0)))
         if thisnmax == prevnmax:
           continue # this nmax already exists
