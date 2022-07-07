@@ -9,15 +9,24 @@ def getPPJSON(partid):
 
   # need to load the refractive index data separately from the JSON
   ridata = data['ri']
-  if ridata['format'] == 'gads':
-    data['mList'] = [getM(path) for path in ridata['path']]
-  elif ridata['format'] == 'csv':
-    data['mList'] = [getMSep(path, ',') for path in ridata['path']]
-  elif ridata['format'] == 'wsv':
-    data['mList'] = [getMSep(path, None) for path in ridata['path']]
-  else:
-    print('refractive index format %s not yet supported'%ridata['format'])
-    sys.exit()
+  ridata2 = data['shellRi']
+  
+  ridatas = [ridata, ridata2]
+  keys = ['mList', 'mList2']
+
+  for iii in range(len(ridatas)):
+    useridata = ridatas[iii]
+    usekey = keys[iii]
+
+    if useridata['format'] == 'gads':
+      data[key] = [getM(path) for path in useridata['path']]
+    elif useridata['format'] == 'csv':
+      data[key] = [getMSep(path, ',') for path in useridata['path']]
+    elif useridata['format'] == 'wsv':
+      data[key] = [getMSep(path, None) for path in useridata['path']]
+    else:
+      print('refractive index format %s not yet supported'%useridata['format'])
+      sys.exit()
 
   # do convenience format corrections to du psd data
   psddata = data['psd']

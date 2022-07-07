@@ -211,6 +211,14 @@ def createNCDF(ncdfID, oppfx, rarr, rharr, lambarr, ang):
   idLambda = ncdf.createDimension('lambda', len(lambarr))
   idAng = ncdf.createDimension('ang', len(ang))
   idNpol = ncdf.createDimension('nPol', 6)
+  if len(shellFraction) > 0:
+    coreshell = True
+  else:
+    coreshell = False
+
+
+  if coreshell:
+    idShell = ncdf.createDimension('shellFration', len(shellFraction))
 
   usezlib = False # no compression
 
@@ -333,8 +341,14 @@ def createNCDF(ncdfID, oppfx, rarr, rharr, lambarr, ang):
   idAng = ncdf.createVariable('ang', 'f8', ('ang'), zlib=usezlib)
   idNpol = ncdf.createVariable('nPol', 'f8', ('nPol'), zlib=usezlib)
 
-  # use list for easier looping
-  dimvars = ['radius', 'rh', 'lambda', 'ang', 'nPol']
+  if coreshell:
+    idShell = ncdf.createVariable('shellFration', 'f8', ('shellFraction'), zlib=usezlib)
+    dimvars = ['radius', 'rh', 'lambda', 'ang', 'nPol']#, 'shellFraction'] # skip for now
+  else:
+    # use list for easier looping
+    dimvars = ['radius', 'rh', 'lambda', 'ang', 'nPol']
+
+
   for var in dimvars:
     ncdf.variables[var].long_name = vardict[var]['long_name']
     ncdf.variables[var].units = vardict[var]['units']
@@ -345,14 +359,24 @@ def createNCDF(ncdfID, oppfx, rarr, rharr, lambarr, ang):
   idLambda[:] = lambarr
   idAng[:] = ang
   idNpol[:] = range(len(idNpol[:]))
+  idShell[:] = shellFraction
 
-  ncdfDimensionTypes = {\
-  "scalarScattering": ("radius", "rh", "lambda"),\
-  "noLambdaScalarScattering": ("radius", "rh"),\
-  "scatteringFun": ("radius", "rh", "lambda", "ang"),\
-  "elementScattering": ("nPol", "radius", "rh", "lambda"),\
-  "scalarVals": ("radius"),\
-  }
+  if coreshell:
+    ncdfDimensionTypes = {\
+    "scalarScattering": ("radius", "rh", "lambda", "shellFraction"),\
+    "noLambdaScalarScattering": ("radius", "rh", "shellFraction"),\
+    "scatteringFun": ("radius", "rh", "lambda", "ang", "shellFraction"),\
+    "elementScattering": ("nPol", "radius", "rh", "lambda", "shellFraction"),\
+    "scalarVals": ("radius"),\
+    }
+  else:
+    ncdfDimensionTypes = {\
+    "scalarScattering": ("radius", "rh", "lambda"),\
+    "noLambdaScalarScattering": ("radius", "rh"),\
+    "scatteringFun": ("radius", "rh", "lambda", "ang"),\
+    "elementScattering": ("nPol", "radius", "rh", "lambda"),\
+    "scalarVals": ("radius"),\
+    }
 
   # for each NetCDF variable, assign one dimension type based on the dimension types dictionary
   ncdfVariableDimensionTypes = {\
@@ -627,6 +651,7 @@ def fun(partID0, datatype, oppfx):
     
 
   mList = params['mList']
+  mList2 = params['mList2']
   waterMList = pp.getWaterM()
 
 
@@ -636,6 +661,8 @@ def fun(partID0, datatype, oppfx):
   # interpolation functions for mr, mi
   partMr = [interp1d(mList[i][0], mList[i][1]) for i in range(len(mList))]
   partMi = [interp1d(mList[i][0], mList[i][2]) for i in range(len(mList))]
+  partMr2 = [interp1d(mList2[i][0], mList2[i][1]) for i in range(len(mList2))]
+  partMi2 = [interp1d(mList2[i][0], mList2[i][2]) for i in range(len(mList2))]
   waterMr = interp1d(waterMList[0], waterMList[1])
   waterMi = interp1d(waterMList[0], waterMList[2])
 
@@ -708,7 +735,8 @@ def fun(partID0, datatype, oppfx):
       xxarr, drarr = initializeXarr(params, radind, minlam, maxlam)
 
     if mode == 'mie':
-      multipleMie = MultipleMie(xxarr, None, costarr)
+      yyarr = np.array(xxarr)*2
+      multipleMie = MultipleMie(xxarr, yyarr, costarr)
       multipleMie.preCalculate()
 
     allvals = {}
@@ -727,8 +755,12 @@ def fun(partID0, datatype, oppfx):
       print("+++++ LAMBDA %.2e +++++"%lam)
       mr0 = [partMr[i](lam) for i in range(len(partMr))]
       mi0 = [-partMi[i](lam) for i in range(len(partMi))]
-      #mi0 = -partMi(lam) # defined as negative 
       nref0 = [complex(mr0[i], mi0[i]) for i in range(len(mr0))]
+
+      mr02 = [partMr2[i](lam) for i in range(len(partMr2))]
+      mi02 = [-partMi2[i](lam) for i in range(len(partMi2))]
+      #mi0 = -partMi(lam) # defined as negative 
+      nref02 = [complex(mr02[i], mi02[i]) for i in range(len(mr02))]
 
       xconv = 2 * np.pi / lam
       rarr = xxarr / xconv
@@ -759,6 +791,11 @@ def fun(partID0, datatype, oppfx):
           continue
 
         mr, mi, gf, rrat = getHumidRefractiveIndex(params, radind, rhi, rh, nref0, nrefwater)
+
+        # coreshell mr, mi
+        mr2, mi2, gf2, rrat2 = getHumidRefractiveIndex(params, radind, rhi, rh, nref02, nrefwater)
+        mr = [mr, mr2]
+        mi = [mi, mi2]
 
         psd, rLow, rUp = calculatePSD(params, radind, onerh, rh, xxarr, drarr, rrat, lam)
 
@@ -864,13 +901,13 @@ def fun(partID0, datatype, oppfx):
         for key in allkeys: # we can also save to allvals and write later
           if key in scatkeys:
             iii += 1
-            opncdf.variables[key][radind, rhi, li, :] = ret[key][:]
+            opncdf.variables[key][radind, rhi, li, sf, :] = ret[key][:]
           elif key in elekeys:
-            opncdf.variables[key][:, radind, rhi, li] = ret[key][:]
+            opncdf.variables[key][:, radind, rhi, li, sf] = ret[key][:]
           elif key in scalarkeys + extrakeys:
-            opncdf.variables[key][radind, rhi, li] = ret[key]
+            opncdf.variables[key][radind, rhi, li, sf] = ret[key]
           elif key in nlscalarkeys:
-            opncdf.variables[key][radind, rhi] = ret[key]
+            opncdf.variables[key][radind, rhi, sf] = ret[key]
           else:
             print("key category missing: %s"%key)
             sys.exit()
