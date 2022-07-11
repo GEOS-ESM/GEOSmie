@@ -81,7 +81,7 @@ class MultipleMie(object):
         else:
           # TODO not optimized
           # mr, mi are arrays for core-shell
-          eps = [complex(mr[i], mi[i]) for i in range(len(mr))]
+          eps = [complex(mr[i], mi[i]) ** 2 for i in range(len(mr))]
           coeffs = coated_mie_coeff(eps[0], eps[1], thisxx, self.yArr[xxi])
 
           # if outer shell is defined use it in mie_props
