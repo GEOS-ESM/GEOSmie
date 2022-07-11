@@ -825,6 +825,12 @@ def fun(partID0, datatype, oppfx):
           else:
             pass
 
+          if 'mixing' in params:
+            mr, mi = pp.calculateMixedRI(mr[0], mi[0], sf, params['mixing'])
+            mr = [mr]
+            mi = [mi]
+          
+
           psd, rLow, rUp = calculatePSD(params, radind, onerh, rh, xxarr, drarr, rrat, lam)
 
           """

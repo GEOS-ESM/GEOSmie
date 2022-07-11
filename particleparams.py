@@ -3,6 +3,36 @@ import os
 import json
 import sys
 
+def calculateMixedRI(mrarr, miarr, sf, mixingrule):
+  volf = sf**3 # volume fraction
+  corevolf = 1-volf
+
+  print(mrarr, miarr)
+  eps = [complex(mrarr[i], miarr[i]) ** 2 for i in range(len(mrarr))]
+  if mixingrule == 'volume':
+    #mr = mrarr[0] * corevolf + mrarr[1] * volf
+    #mi = miarr[0] * corevolf + miarr[1] * volf
+    # use eps mixing rather than mr mixing
+    epseff = eps[0] * corevolf + eps[1] * volf
+    mr = np.sqrt(epseff).real
+    mi = np.sqrt(epseff).imag
+  elif mixingrule == 'bruggeman':
+    hb = (3*corevolf - 1) * eps[0] + (3*volf - 1) * eps[1]
+    epseff = (hb + np.sqrt(hb**2 + 8*eps[0]*eps[1])) / 4
+    mr = np.sqrt(epseff).real
+    mi = np.sqrt(epseff).imag
+  elif mixingrule == 'mg':
+    em = eps[0]
+    ed = eps[1]
+    cm = corevolf
+    cd = volf
+    epseff = ed * (1 + 3 * cm * (em-ed) / (em + 2*ed - cm*(em-ed)))
+    mr = np.sqrt(epseff).real
+    mi = np.sqrt(epseff).imag
+
+  # return mrarr, miarr in same dimensions, but with each mr value being the same
+  return [mr, mr], [mi, mi]
+
 def getPPJSON(partid):
   with open("%s"%partid) as fp:
     data = json.load(fp)
