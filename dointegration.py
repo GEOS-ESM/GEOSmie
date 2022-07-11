@@ -203,7 +203,7 @@ def find_closest_ind(myList, myNumber, typ='none',ide=''):
       return pos - 1
 
 
-def createNCDF(ncdfID, oppfx, rarr, rharr, lambarr, ang):
+def createNCDF(ncdfID, oppfx, rarr, rharr, lambarr, ang, shellFraction):
   ncdf = netCDF4.Dataset(os.path.join(oppfx, 'integ-%s.nc'%ncdfID), 'w')
 
   idR= ncdf.createDimension('radius', len(rarr))
@@ -218,7 +218,7 @@ def createNCDF(ncdfID, oppfx, rarr, rharr, lambarr, ang):
 
 
   if coreshell:
-    idShell = ncdf.createDimension('shellFration', len(shellFraction))
+    idShell = ncdf.createDimension('shellFraction', len(shellFraction))
 
   usezlib = False # no compression
 
@@ -342,7 +342,7 @@ def createNCDF(ncdfID, oppfx, rarr, rharr, lambarr, ang):
   idNpol = ncdf.createVariable('nPol', 'f8', ('nPol'), zlib=usezlib)
 
   if coreshell:
-    idShell = ncdf.createVariable('shellFration', 'f8', ('shellFraction'), zlib=usezlib)
+    idShell = ncdf.createVariable('shellFraction', 'f8', ('shellFraction'), zlib=usezlib)
     dimvars = ['radius', 'rh', 'lambda', 'ang', 'nPol']#, 'shellFraction'] # skip for now
   else:
     # use list for easier looping
@@ -682,6 +682,8 @@ def fun(partID0, datatype, oppfx):
 
   lambarr = allLambda # allLambda is read from a refractive index file
 
+  sfarr = params['shellFractions']
+
   rh = params['rh'] 
 
   """
@@ -700,7 +702,7 @@ def fun(partID0, datatype, oppfx):
   minlam = allLambda[0]
   maxlam = allLambda[-1]
 
-  opncdf = createNCDF(ncdfID, oppfx, radiusarr, rh, lambarr, ang[:])
+  opncdf = createNCDF(ncdfID, oppfx, radiusarr, rh, lambarr, ang[:], sfarr)
 
   if useGrasp:
     # if we are using a spheroid kernel system then override xxarr with
@@ -734,185 +736,218 @@ def fun(partID0, datatype, oppfx):
     if not useGrasp:
       xxarr, drarr = initializeXarr(params, radind, minlam, maxlam)
 
-    if mode == 'mie':
-      yyarr = np.array(xxarr)*2
-      multipleMie = MultipleMie(xxarr, yyarr, costarr)
-      multipleMie.preCalculate()
+    #### TODO: implement shellfraction loop here, probably just after radindarr
+    #### this way we can just set yyarr here properly
+    for sfi, sf in enumerate(sfarr):
+      print('shell fraction %.4f'%sf)
+      # sf is defined as a multiplier of the core diameter,
+      # which defines the shell outer diameter
+      # has to be >=1 
+      # alternatively we could use the fraction 0...1 and calculate the scaling factor
+      # basically, the particle would stay the same size, the core would shrink and the shell would
+      # grow. i think this is what we actually need
 
-    allvals = {}
-    for key in allkeys:
-      allvals[key] = np.zeros(opncdf.variables[key][:].shape)
+      # need to check how this is defined. if we want to keep outer size constant
+      # then does yarr always == xxarr,and we only modify core?
 
-    """
-    TODO!
-    parallelization over lambda, i.e. have a single worker evaluate each lambda since they are independent of each other
+      core = xxarr * (1-sf)
+      #shell = xxarr * sf # TBD may need to be xxarr here
+      shell = xxarr
 
-    therefore, we should move this huge block of code under the loop into a separate function that takes lambda as a parameter along with everything else it needs
-    """
-
-    iii = 0
-    for li, lam in enumerate(lambarr):
-      print("+++++ LAMBDA %.2e +++++"%lam)
-      mr0 = [partMr[i](lam) for i in range(len(partMr))]
-      mi0 = [-partMi[i](lam) for i in range(len(partMi))]
-      nref0 = [complex(mr0[i], mi0[i]) for i in range(len(mr0))]
-
-      mr02 = [partMr2[i](lam) for i in range(len(partMr2))]
-      mi02 = [-partMi2[i](lam) for i in range(len(partMi2))]
-      #mi0 = -partMi(lam) # defined as negative 
-      nref02 = [complex(mr02[i], mi02[i]) for i in range(len(mr02))]
-
-      xconv = 2 * np.pi / lam
-      rarr = xxarr / xconv
-
-      if params['rhDep']['type'] == 'trivial':
-        nrefwater = complex(1,0) # placeholder, never used
-      else:
-        watermr0 = waterMr(lam)
-        watermi0 = waterMi(lam)
-        nrefwater = complex(watermr0, watermi0)
-
-      if 'maxrh' in params:
-        maxrh = params['maxrh']
-        capind = np.where(np.array(rh) > maxrh)[0]
-        rh = np.array(rh)
-        rh[capind] = maxrh
-
-
-      """
-      Start RH loop
-      """
-      for rhi, onerh in enumerate(rh):
-        pparam = params['psd']['params']
-        rparams = params['rhDep']
-
-        if params['rhDep']['type'] == 'trivial' and rhi > 0: # same values for all rh, save in computation
-          copyDryValues(opncdf, allkeys, scatkeys, elekeys, extrakeys, nlscalarkeys, radind, rhi, li)
-          continue
-
-        mr, mi, gf, rrat = getHumidRefractiveIndex(params, radind, rhi, rh, nref0, nrefwater)
-
-        # coreshell mr, mi
-        mr2, mi2, gf2, rrat2 = getHumidRefractiveIndex(params, radind, rhi, rh, nref02, nrefwater)
-        mr = [mr, mr2]
-        mi = [mi, mi2]
-
-        psd, rLow, rUp = calculatePSD(params, radind, onerh, rh, xxarr, drarr, rrat, lam)
-
-        """
-        ***********
-        
-        Start the calculations
-
-        ***********
-        """
-
-        rhop00 = params['rhop0'] # read from a file
-        if isinstance(rhop00, list): 
-          # rhop0 is defined separately for each size bin, read the right one
-          rhop0 = rhop00[radind]
+      if mode == 'mie':
+        if len(sfarr) > 1 or True:
+          multipleMie = MultipleMie(core, shell, costarr)
+          multipleMie.preCalculate()
         else:
-          rhop0 = rhop00
+          multipleMie = MultipleMie(xxarr, None, costarr)
+          multipleMie.preCalculate()
 
-        rhow  = 1000. # density of water, constant
-        rhop = rrat ** 3. * rhop0 + (1. - rrat ** 3.) * rhow
+      allvals = {}
+      for key in allkeys:
+        allvals[key] = np.zeros(opncdf.variables[key][:].shape)
 
-        if mode == 'mie':
-          allret = []
-          for refi in range(len(mr)):
-            rawret = rawMie(multipleMie, scatkeys, scalarkeys, lam, mr[refi], mi[refi], None, costarr)
-            allret.append(rawret)
+      """
+      TODO!
+      parallelization over lambda, i.e. have a single worker evaluate each lambda since they are independent of each other
+
+      therefore, we should move this huge block of code under the loop into a separate function that takes lambda as a parameter along with everything else it needs
+      """
+
+      iii = 0
+      for li, lam in enumerate(lambarr):
+        print("+++++ LAMBDA %.2e +++++"%lam)
+        mr0 = [partMr[i](lam) for i in range(len(partMr))]
+        mi0 = [-partMi[i](lam) for i in range(len(partMi))]
+        nref0 = [complex(mr0[i], mi0[i]) for i in range(len(mr0))]
+
+        mr02 = [partMr2[i](lam) for i in range(len(partMr2))]
+        mi02 = [-partMi2[i](lam) for i in range(len(partMi2))]
+        #mi0 = -partMi(lam) # defined as negative 
+        nref02 = [complex(mr02[i], mi02[i]) for i in range(len(mr02))]
+
+        xconv = 2 * np.pi / lam
+        rarr = xxarr / xconv
+
+        if params['rhDep']['type'] == 'trivial':
+          nrefwater = complex(1,0) # placeholder, never used
+        else:
+          watermr0 = waterMr(lam)
+          watermi0 = waterMi(lam)
+          nrefwater = complex(watermr0, watermi0)
+
+        if 'maxrh' in params:
+          maxrh = params['maxrh']
+          capind = np.where(np.array(rh) > maxrh)[0]
+          rh = np.array(rh)
+          rh[capind] = maxrh
+
+
+        """
+        Start RH loop
+        """
+        for rhi, onerh in enumerate(rh):
+          pparam = params['psd']['params']
+          rparams = params['rhDep']
+
+          if params['rhDep']['type'] == 'trivial' and rhi > 0: # same values for all rh, save in computation
+            copyDryValues(opncdf, allkeys, scatkeys, elekeys, extrakeys, nlscalarkeys, radind, rhi, li)
+            continue
+
+          mr, mi, gf, rrat = getHumidRefractiveIndex(params, radind, rhi, rh, nref0, nrefwater)
+
+          # coreshell mr, mi
+          mr2, mi2, gf2, rrat2 = getHumidRefractiveIndex(params, radind, rhi, rh, nref02, nrefwater)
+
+          # ugly form since the initial mr is an array for multimode particles
+          if len(sfarr) > 1:
+            mr = [[mr[0], mr2[0]]]
+            mi = [[mi[0], mi2[0]]]
+          else:
+            pass
+
+          psd, rLow, rUp = calculatePSD(params, radind, onerh, rh, xxarr, drarr, rrat, lam)
+
+          """
+          ***********
           
-          if len(allret) == 1:
-            # make compatible with multibin psd
-            allret = [allret[0] for i in range(len(psd))] # multibin
+          Start the calculations
 
-          # separate integration step
-          ret = integratePSD(multipleMie.xArr, allret, psd, pparam['fracs'][radind], lam, rhop0, rhop)
+          ***********
+          """
 
-        elif useGrasp:
-          ret0 = globalSpheroid
-
-          allmr = ret0['mr'][:]
-          allmi = -ret0['mi'][:] # change sign
-
-          keys = ['ext', 'abs', 'sca', 'qext', 'qabs', 'qsca', 'qb', 'g', 'cext', 'csca', 'cabs']
-          scatelekeys = ['scama']
-          scatelems = ['s11', 's22', 's33', 's44', 's12', 's34'] # order Mischenko's code expects
-          ret1 = {}
-          for kk in keys:
-            valmat = ret0[kk][:,:,:]
-            val = get_interpolated(valmat, mr, mi, allmr, allmi)
-            ret1[kk] = val
-
-          for kk in scatelekeys:
-            for scati in range(len(scatelems)):
-              if scati == 0:
-                dodebug = True
-              else:
-                dodebug = False
-              valmat = ret0[kk][:,:,:,scati,:]
-              val = get_interpolated(valmat, mr, mi, allmr, allmi, debug=dodebug)
-              ret1[scatelems[scati]] = val
-
-          ret1['qsca'] = ret1['qsca']
-
-          ret1['csca'] = np.array(ret1['qsca']) * np.pi * rarr ** 2
-          ret1['cext'] = np.array(ret1['qext']) * np.pi * rarr ** 2
-
-          ret1 = [ret1 for i in range(len(psd))] # multibin
-          if len(pparam['fracs']) == 1:
-            # if only one set of fracs is given we always use it
-            usefracs = pparam['fracs'][0]
+          rhop00 = params['rhop0'] # read from a file
+          if isinstance(rhop00, list): 
+            # rhop0 is defined separately for each size bin, read the right one
+            rhop0 = rhop00[radind]
           else:
-            usefracs = pparam['fracs'][radind]
-          ret = integratePSD(xxarr, ret1, psd, usefracs, lam, rhop0, rhop)
+            rhop0 = rhop00
 
-        qsca = np.array(ret['qsca'])
-        qext = np.array(ret['qext'])
-        qb = np.array(ret['qb'])
+          rhow  = 1000. # density of water, constant
+          rhop = rrat ** 3. * rhop0 + (1. - rrat ** 3.) * rhow
 
-        """
-        Calculate extra post-integration variables
-        """
+          if mode == 'mie':
+            allret = []
+            for refi in range(len(mr)):
+              rawret = rawMie(multipleMie, scatkeys, scalarkeys, lam, mr[refi], mi[refi], None, costarr)
+              allret.append(rawret)
+            
+            if len(allret) == 1:
+              # make compatible with multibin psd
+              allret = [allret[0] for i in range(len(psd))] # multibin
 
-        ret['lidar_ratio'] = qext / qb * 4 * np.pi
+            # separate integration step
+            ret = integratePSD(multipleMie.xArr, allret, psd, pparam['fracs'][radind], lam, rhop0, rhop)
 
-        ret['ssa'] = qsca / qext
+          elif useGrasp:
+            ret0 = globalSpheroid
 
-        ret['rLow'] = rLow
-        ret['rUp'] = rUp
+            allmr = ret0['mr'][:]
+            allmi = -ret0['mi'][:] # change sign
 
-        pbackorder = ['s11', 's12', 's33', 's34', 's22', 's44']
-        ret['pback'] = np.array([ret[key][-1] for key in pbackorder])
+            keys = ['ext', 'abs', 'sca', 'qext', 'qabs', 'qsca', 'qb', 'g', 'cext', 'csca', 'cabs']
+            scatelekeys = ['scama']
+            scatelems = ['s11', 's22', 's33', 's44', 's12', 's34'] # order Mischenko's code expects
+            ret1 = {}
+            for kk in keys:
+              valmat = ret0[kk][:,:,:]
+              val = get_interpolated(valmat, mr, mi, allmr, allmi)
+              ret1[kk] = val
 
-        ret['growth_factor'] = gf
+            for kk in scatelekeys:
+              for scati in range(len(scatelems)):
+                if scati == 0:
+                  dodebug = True
+                else:
+                  dodebug = False
+                valmat = ret0[kk][:,:,:,scati,:]
+                val = get_interpolated(valmat, mr, mi, allmr, allmi, debug=dodebug)
+                ret1[scatelems[scati]] = val
 
-        mass0 = ret['volume'] * rhop0
+            ret1['qsca'] = ret1['qsca']
 
-        ret['rhop'] = rhop
-        ret['area'] = ret['area'] / mass0
-        ret['volume'] = ret['volume'] / mass0
+            ret1['csca'] = np.array(ret1['qsca']) * np.pi * rarr ** 2
+            ret1['cext'] = np.array(ret1['qext']) * np.pi * rarr ** 2
 
-        # mr and mi are arrays since we might have multimodal PSD with different components as modes
-        ret['refreal'] = mr[0]
-        ret['refimag'] = -np.abs(mi[0]) # force negative to be consistent with Pete's tables
+            ret1 = [ret1 for i in range(len(psd))] # multibin
+            if len(pparam['fracs']) == 1:
+              # if only one set of fracs is given we always use it
+              usefracs = pparam['fracs'][0]
+            else:
+              usefracs = pparam['fracs'][radind]
+            ret = integratePSD(xxarr, ret1, psd, usefracs, lam, rhop0, rhop)
 
-        for key in allkeys: # we can also save to allvals and write later
-          if key in scatkeys:
-            iii += 1
-            opncdf.variables[key][radind, rhi, li, sf, :] = ret[key][:]
-          elif key in elekeys:
-            opncdf.variables[key][:, radind, rhi, li, sf] = ret[key][:]
-          elif key in scalarkeys + extrakeys:
-            opncdf.variables[key][radind, rhi, li, sf] = ret[key]
-          elif key in nlscalarkeys:
-            opncdf.variables[key][radind, rhi, sf] = ret[key]
+          qsca = np.array(ret['qsca'])
+          qext = np.array(ret['qext'])
+          qb = np.array(ret['qb'])
+
+          """
+          Calculate extra post-integration variables
+          """
+
+          ret['lidar_ratio'] = qext / qb * 4 * np.pi
+
+          ret['ssa'] = qsca / qext
+
+          ret['rLow'] = rLow
+          ret['rUp'] = rUp
+
+          pbackorder = ['s11', 's12', 's33', 's34', 's22', 's44']
+          ret['pback'] = np.array([ret[key][-1] for key in pbackorder])
+
+          ret['growth_factor'] = gf
+
+          mass0 = ret['volume'] * rhop0
+
+          ret['rhop'] = rhop
+          ret['area'] = ret['area'] / mass0
+          ret['volume'] = ret['volume'] / mass0
+
+          # mr and mi are arrays since we might have multimodal PSD with different components as modes
+
+          # hax to deal with coreshell
+          if len(sfarr) > 1:
+            ret['refreal'] = mr[0][0]
+            ret['refimag'] = -np.abs(mi[0][0]) # force negative to be consistent with Pete's tables
           else:
-            print("key category missing: %s"%key)
-            sys.exit()
-        # end rh loop
-      # end lambda loop
+            ret['refreal'] = mr[0]
+            ret['refimag'] = -np.abs(mi[0]) # force negative to be consistent with Pete's tables
+
+          for key in allkeys: # we can also save to allvals and write later
+            if key in scatkeys:
+              iii += 1
+              opncdf.variables[key][radind, rhi, li, :, sfi] = ret[key][:]
+            elif key in elekeys:
+              opncdf.variables[key][:, radind, rhi, li, sfi] = ret[key][:]
+            elif key in scalarkeys + extrakeys:
+              opncdf.variables[key][radind, rhi, li, sfi] = ret[key]
+            elif key in nlscalarkeys:
+              opncdf.variables[key][radind, rhi, sfi] = ret[key]
+            else:
+              print("key category missing: %s"%key)
+              sys.exit()
+          # end rh loop
+        # end lambda loop
+      # end shellFraction loop
     # end radind loop
 
   opncdf.close()
