@@ -19,11 +19,11 @@ def getPPJSON(partid):
     usekey = keys[iii]
 
     if useridata['format'] == 'gads':
-      data[key] = [getM(path) for path in useridata['path']]
+      data[usekey] = [getM(path) for path in useridata['path']]
     elif useridata['format'] == 'csv':
-      data[key] = [getMSep(path, ',') for path in useridata['path']]
+      data[usekey] = [getMSep(path, ',') for path in useridata['path']]
     elif useridata['format'] == 'wsv':
-      data[key] = [getMSep(path, None) for path in useridata['path']]
+      data[usekey] = [getMSep(path, None) for path in useridata['path']]
     else:
       print('refractive index format %s not yet supported'%useridata['format'])
       sys.exit()
