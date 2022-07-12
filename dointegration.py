@@ -755,7 +755,7 @@ def fun(partID0, datatype, oppfx):
       shell = xxarr
 
       if mode == 'mie':
-        if len(sfarr) > 1 or True:
+        if len(sfarr) > 1:
           multipleMie = MultipleMie(core, shell, costarr)
           multipleMie.preCalculate()
         else:
@@ -825,11 +825,13 @@ def fun(partID0, datatype, oppfx):
           else:
             pass
 
+          # hax mixing rule
+          # basically, rather than do coreshell we may do internal mixing using
+          # the two material fractions
           if 'mixing' in params:
             mr, mi = pp.calculateMixedRI(mr[0], mi[0], sf, params['mixing'])
             mr = [mr]
             mi = [mi]
-          
 
           psd, rLow, rUp = calculatePSD(params, radind, onerh, rh, xxarr, drarr, rrat, lam)
 
@@ -862,7 +864,12 @@ def fun(partID0, datatype, oppfx):
               allret = [allret[0] for i in range(len(psd))] # multibin
 
             # separate integration step
-            ret = integratePSD(multipleMie.xArr, allret, psd, pparam['fracs'][radind], lam, rhop0, rhop)
+            if multipleMie.yArr is not None:
+              sizeArrUse = multipleMie.yArr
+            else:
+              sizeArrUse = multipleMie.xArr
+
+            ret = integratePSD(sizeArrUse, allret, psd, pparam['fracs'][radind], lam, rhop0, rhop)
 
           elif useGrasp:
             ret0 = globalSpheroid
