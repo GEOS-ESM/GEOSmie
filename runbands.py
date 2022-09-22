@@ -13,6 +13,10 @@ if __name__ == "__main__":
               help="Optical table file to use (default=%s)"\
                           %(""))
 
+  parser.add_option("--namelist", dest="namelist", default="", 
+              help="File with list of particle optics files (to be passed to --filename) to run iteratively. If used, overrides --filename (default=%s)"\
+                          %(""))
+
   parser.add_option("--partname", dest="partname", default="", 
               help="Particle name to use in the qname variable of the output table (default=%s)"\
                           %(""))
@@ -35,14 +39,30 @@ if __name__ == "__main__":
 
   (options, args) = parser.parse_args()
 
-  if not os.path.exists(options.filename):
-    parser.error("Input file path (--filename) does not exist")
-
   if options.bandmode.upper() not in acceptedBandmodes:
     parser.error("Band type must be one of: %s"%(acceptedBandmodes))
 
-  bandaverage.processFileForBandMode(options.filename, options.partname, options.dest,\
-  options.bandmode.upper(), options.useSolar, options.noIR)
+  namelist = []
+  if options.namelist:
+    if not os.path.exists(options.namelist):
+      parser.error("Namelist %s does not exist"%options.namelist)
+
+    with open(options.namelist) as fp:
+      lines = fp.readlines()
+
+    for line in lines:
+      namelist.append(line.strip())
+  else:
+    namelist = [options.filename]
+
+  for fni, fn in enumerate(namelist):
+    print("Starting optics file %s, %d of %d"%(fn, fni+1, len(namelist)))
+
+    if not os.path.exists(fn):
+      parser.error("Input file path (--filename) does not exist: %s"%fn)
+  
+    bandaverage.processFileForBandMode(fn, options.partname, options.dest,\
+    options.bandmode.upper(), options.useSolar, options.noIR)
 
   print('Done!')
 
