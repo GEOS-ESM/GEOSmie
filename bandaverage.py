@@ -168,10 +168,10 @@ def fun(data, part, opfn, mode, useSolar, noIR):
   # so then the bands will be [band1, (band0+band2)/2, band3, band4, ...)
   # I have no clue why this is done...better check with Pete
   if mode == 'GEOS5':
+    bw1 = lBandUp[0] - lBandLow[0]
+    bw2 = lBandUp[2] - lBandLow[2]
     for key, val in output.items():
       # this weighing needs to be done in wavelength space
-      bw1 = lBandUp[0] - lBandLow[0]
-      bw2 = lBandUp[2] - lBandLow[2]
       avg = (bw1 * val[:, :, 0] + bw2 * val[:, :, 2]) / (bw1 + bw2)
       # assign the average to index 2
       val[:, :, 2] = avg
