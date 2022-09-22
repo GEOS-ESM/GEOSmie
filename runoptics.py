@@ -78,17 +78,17 @@ if __name__ == "__main__":
     dointegration.fun(fn, options.datatype, options.dest)
 
 
+    opfn = "integ-%s-raw.nc"%particlename
     if "hydrophobic" in params and params["hydrophobic"]:
-      fn = "integ-%s-raw.nc"%particlename
       # rename non-HP file 
-      fn2 = "%s.nohp"%fn
-      shutil.move(os.path.join(options.dest, fn), os.path.join(options.dest, fn2))
+      fn2 = "%s.nohp"%opfn
+      shutil.move(os.path.join(options.dest, opfn), os.path.join(options.dest, fn2))
       # run the hydrophobic code
       print("Starting hydrophobic bin handling")
-      hydrophobic.doConversion(fn2, fn, options.dest)
+      hydrophobic.doConversion(fn2, opfn, options.dest)
       # remove the temp file (fn2)
       os.remove(os.path.join(options.dest, fn2))
 
-    print("Done, output file: %s"%fn)
+    print("Done, output file: %s"%opfn)
 
 
