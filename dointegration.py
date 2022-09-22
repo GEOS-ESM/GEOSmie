@@ -693,7 +693,7 @@ def fun(partID0, datatype, oppfx):
     else:
       print('undefined shape distribution: %s'%mode)
       sys.exit()
-    spfracs = np.loadtxt(distpath, usecols=[0], unpack=True)
+    spfracs = np.loadtxt(distpath, usecols=[0], unpack=True, ndmin=1)
     print('Integrating kernels...')
     globalSpheroid = integrateShapes(spdata, spfracs)
     print('Done')
