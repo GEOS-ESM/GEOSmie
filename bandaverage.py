@@ -205,6 +205,28 @@ def fun(data, part, opfn, mode, useSolar, noIR):
   opncdf.createVariable('qname', 'c', ('radius', 'nchar'))
   qname = ['%s%03d'%(part, i) for i in range(1, len(radius)+1)]
 
+  # add low and high limit information for bands
+  # convert to wavelength if needed
+  if mode == 'RRTMG':
+    # convert from wavenumber to wavelength
+    lBandLow = np.array(lBandLow) ** (-1) * 0.01
+    lBandUp = np.array(lBandUp) ** (-1) * 0.01
+    lBandLow0 = lBandUp[::-1]
+    lBandUp0 = lBandLow[::-1]
+    lBandUp = lBandUp0
+    lBandLow = lBandLow0
+  lBandLow = lBandLow * 1e6
+  lBandUp = lBandUp * 1e6
+  opncdf.createVariable('bandLow', 'f8', ('lambda'))
+  opncdf.variables['bandLow'][:] = lBandLow
+  opncdf.variables['bandLow'].long_name = 'Lower edges of the bands'
+  opncdf.variables['bandLow'].units = 'micrometers'
+
+  opncdf.createVariable('bandUp', 'f8', ('lambda'))
+  opncdf.variables['bandUp'][:] = lBandLow
+  opncdf.variables['bandUp'].long_name = 'Upper edges of the bands'
+  opncdf.variables['bandUp'].units = 'micrometers'
+
   # backwards way of writing the strings
   for qi, qq in enumerate(qname):
     for ci, char in enumerate(qq):
