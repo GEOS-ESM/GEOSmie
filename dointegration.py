@@ -616,15 +616,16 @@ def fun(partID0, datatype, oppfx):
   else:
     partID2 = partID0
   params = pp.getParticleParams(partID2, datatype)
-  mode = 'mie'
-  if 'shape' in params:
-    mode = params['shape']
+  mode = 'mie' # default
+  if 'mode' in params:
+    mode = params['mode']
 
-  if mode == 'spheroid' or mode == 'spheroid_sphere':
+  if mode == 'kernel':
     useGrasp = True
   elif mode == 'mie':
     useGrasp = False
-    
+  else:
+    sys.exit(f"Unknown mode: {mode}")
 
   mList = params['mList']
   waterMList = pp.getWaterM()
@@ -679,20 +680,17 @@ def fun(partID0, datatype, oppfx):
     # if we are using a spheroid kernel system then override xxarr with
     # what is actually available from the spheroids
 
-    if 'kernel' not in params:
-      print('spheroid kernel parameter (\'kernel\') not defined')
+    kparams = params['kernel_params']
+
+    if 'path' not in kparams:
+      print('kernel path parameter (\'path\') not defined')
+      sys.exit()
+    if 'shape_dist' not in kparams:
+      print('kernel shape distribution parameter (\'shape_dist\') not defined')
       sys.exit()
 
-    spdata = readSpheroid(params['kernel'])
-    if mode =='spheroid': 
-      # Dubovik's spheroid distribution
-      distpath = os.path.join('data', 'spheroid_fixed.txt')
-    elif mode == 'spheroid_sphere':
-      # sphere-only distribution for GRASP kernels
-      distpath = os.path.join('data', 'spheroid_sphere.txt')
-    else:
-      print('undefined shape distribution: %s'%mode)
-      sys.exit()
+    spdata = readSpheroid(params['kernel_params']['path'])
+    distpath = kparams['shape_dist']
     spfracs = np.loadtxt(distpath, usecols=[0], unpack=True, ndmin=1)
     print('Integrating kernels...')
     globalSpheroid = integrateShapes(spdata, spfracs)
