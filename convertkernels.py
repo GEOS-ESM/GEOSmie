@@ -1,42 +1,25 @@
 import os
 import numpy as np
 import netCDF4 as nc
+import json
 
-def fun(mode):
-  if mode == 'grasp':
-    path = os.path.join('/misc', 'opk01', 'spheroid-package-master')
-    pfx0 = 'KERNELS_n22k16_181_base' 
-    fnpre = 'Rkernel1'
-    ratios = ['033', '037', '040', '044', '048', '053', '058',\
-    '063', '069', '076', '083', '091', '100', '109', '120', '131',\
-    '144', '158', '173', '189', '207', '227', '249', '273', '299']
-    opn = 'test15-temp.nc'
-    contlen = 16
-    mrlen = 22
-    milen = 16
-    scathdrlen = 32 # number of header lines
-    scatcontlen = 1068 # how long each "element" is
-    #elems = ['11', '12', '22', '33', '34', '44']
-    elems = ['11', '22', '33', '44', '12', '34'] # this is the assumed read in order
-    numang = 181
-    scatelemlen = 26 # how many lines per one refra
-  elif mode == 'saito':
-    path = os.path.join('/misc', 'opk01', 'saito-kernels')
-    pfx0 = ''
-    fnpre = 'kernels'
-    ratios = ['299']
-    opn = 'saito-test.nc'
-    contlen = 6 # no hard line wraps unlike grasp
-    mrlen = 8
-    milen = 31
-    scathdrlen = 25 # saito
-    scatcontlen = 275 # saito
-    #elems = ['11', '12', '22', '33', '43', '44']
-    #elems = ['11', '12', '33', '43', '22', '44']
-    elems = ['11', '22', '33', '44', '12', '43'] # this is the assumed read in order
-    numang = 4706
-    numang = 181
-    scatelemlen = 1
+def fun(ifn, dest):
+  with open(ifn) as fp:
+    data = json.load(fp)
+
+  pfx0 = data['pfx0']
+  path = data['path']
+  fnpre = data['fnpre']
+  ratios = data['ratios'] # list of kernel shape id's to use (axis ratios for spheroids)
+  opn = data['opn'] # output file name
+  contlen = data['contlen'] # length of content (define?)
+  mrlen = data['mrlen'] # number of real refractive indices
+  milen = data['milen'] # number of imaginary refractive indices
+  scathdrlen = data['scathdrlen'] # number of lines in scattering element file headers
+  scatcontlen = data['scatcontlen'] # number of content (define?) lines in scattering element files
+  elems = data['elems'] # scattering matrix element names
+  numang = data['numang'] # number of angle points
+  scatelemlen = data['scatelemlen'] # number of lines in scattering matrix element chunks
 
   pfx = os.path.join(path, pfx0)
   sizes, x = getSizes(pfx)
@@ -47,7 +30,7 @@ def fun(mode):
     ratnums.append(rr)
   
   # output filename
-  fn = os.path.join('../../opk01/convertspheroids/', opn)
+  fn = os.path.join(dest, opn)
 
   ncdf = nc.Dataset(fn, 'w')
   mr = [0] * mrlen
@@ -305,7 +288,3 @@ def getEAOne(li):
     ret += e.split()
   ret = [float(x) for x in ret]
   return ret
-
-
-# TODO supply path and mode from command line
-fun('grasp')
