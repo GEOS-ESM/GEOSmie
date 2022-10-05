@@ -113,10 +113,10 @@ python rungsf.py --help
 
 External kernels (e.g. GRASP spheroids) have to be converted into a specific NetCDF format before GEOSmie can use them. For details on the format, see the full documentation.
 
-A tool is provided for converting kernels from GRASP-like format to a GEOSmie format.
+A tool is provided for converting kernels from GRASP-like format to the GEOSmie-compatible NetCDF file.
 
 ```bash
 python runkernelconversion.py --filename data/kernelconversion/filename.json --dest /path/to/output/directory
 ```
 
-where filename.json specifies how many lines the kernel database uses for each different header and data section. Sample JSON files are provided for GRASP kernels (grasp.json) and GRASP-like Saito et al. kernels (saito.json).
+where filename.json is a parameter file that specifies various aspects on how the kernels should be read, and has to be updated if the incoming kernel format changes in virtually any way. Sample JSON files are provided for GRASP kernels (grasp.json) and GRASP-like Saito et al. kernels (saito.json).
