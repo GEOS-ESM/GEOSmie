@@ -736,23 +736,20 @@ def fun(partID0, datatype, oppfx):
     if not useGrasp:
       xxarr, drarr = initializeXarr(params, radind, minlam, maxlam)
 
-    #### TODO: implement shellfraction loop here, probably just after radindarr
-    #### this way we can just set yyarr here properly
     for sfi, sf in enumerate(sfarr):
       print('shell fraction %.4f'%sf)
-      # sf is defined as a multiplier of the core diameter,
-      # which defines the shell outer diameter
-      # has to be >=1 
-      # alternatively we could use the fraction 0...1 and calculate the scaling factor
-      # basically, the particle would stay the same size, the core would shrink and the shell would
-      # grow. i think this is what we actually need
 
-      # need to check how this is defined. if we want to keep outer size constant
-      # then does yarr always == xxarr,and we only modify core?
+      # TODO: allow specifying the sf mode via the JSON file rather than comment/uncomment the lines below
 
-      core = xxarr * (1-sf)
-      #shell = xxarr * sf # TBD may need to be xxarr here
-      shell = xxarr
+      # this is for the case where core is determined by the base PSD, and shell
+      # grows around it as determined by sf (sf determines multiplier of total radius to core radius and needs to be >1)
+      core = xxarr
+      shell = xxarr * sf
+
+      # this is for the case where overall particle size is fixed, and core shrinks
+      # as shell grows (sf determines the fraction of the radius that is shell, and needs to be >0 and <1)
+      #core = xxarr * (1-sf)
+      #shell = xxarr
 
       if mode == 'mie':
         if len(sfarr) > 1:

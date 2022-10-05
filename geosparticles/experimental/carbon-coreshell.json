@@ -1,0 +1,21 @@
+{
+"rhop0": 1000.0,
+
+"rh": [0.00],
+
+"rhDep": {"type": "simple", "params":{
+  "gf": [1.00]}},
+
+"psd": {"type": "lognorm", "params":{
+  "r0": [[0.0118e-6]],
+  "rmax0": [[0.3e-6]],
+  "rmin0": [[1e-10]],
+  "sigma": [[2.0]],
+  "numperdec": [100],
+  "fracs": [[1.0]]}},
+
+"ri": {"format": "gads", "path": ["data/soot00"]},
+"shellRi": {"format": "wsv", "path": ["data/ri-brc.wsv"]},
+
+"shellFractions": [1.0001, 1.001, 1.01, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 3.0, 5.0]
+}
