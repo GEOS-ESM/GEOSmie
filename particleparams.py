@@ -7,7 +7,6 @@ def calculateMixedRI(mrarr, miarr, sf, mixingrule):
   volf = sf**3 # volume fraction
   corevolf = 1-volf
 
-  print(mrarr, miarr)
   eps = [complex(mrarr[i], miarr[i]) ** 2 for i in range(len(mrarr))]
   if mixingrule == 'volume':
     #mr = mrarr[0] * corevolf + mrarr[1] * volf
