@@ -7,6 +7,7 @@ Table of Contents
       * [Calculations at individual wavelengths](#calculations-at-individual-wavelengths)
       * [Calculations over wavelength bands](#calculations-over-wavelength-bands)
    * [GSF expansion code](#gsf-expansion-code)
+   * [Kernel conversion code](#kernel-conversion-code)
 
 <!-- Created by https://github.com/ekalinin/github-markdown-toc -->
 
