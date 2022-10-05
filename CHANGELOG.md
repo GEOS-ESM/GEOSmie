@@ -9,11 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed a bug where one-line kernel shape distribution files were read incorrectly
+
 ### Added
 
 - Add code and runscript (convertkernels.py and runkernelconversion.py) for converting GRASP-like kernel format for a NetCDF file that GEOSmie can use as kernels. Also included are two preset (in data/kernelconversion/) parameter files for reading two kernel types used so far.
 - Read kernel shape distribution from a JSON-supplied file
 - Add JSON files for several experimental dust types, included in geosparticles/experimental/ directory
+- Add band wavelength upper/lower edge information to band-averaged files
 
 ### Changed
 
