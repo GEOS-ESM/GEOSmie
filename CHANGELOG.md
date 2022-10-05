@@ -11,7 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add code and runscript (convertkernels.py and runkernelconversion.py) for converting GRASP-like kernel format for a NetCDF file that GEOSmie can use as kernels. Also included are two preset (in data/kernelconversion/) parameter files for reading two kernel types used so far.
+- Read kernel shape distribution from a JSON-supplied file
+- Add JSON files for several experimental dust types, included in geosparticles/experimental/ directory
+
 ### Changed
+
+- Kernel file path moved to a kerneal\_params dict, breaking backward compatibility with old non-Mie JSON files
+- Changed the default behavior of generate\_geos\_optics.sh to not run dust, given dust needs extra steps to run
 
 ### Removed
 
