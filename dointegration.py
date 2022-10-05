@@ -828,6 +828,8 @@ def fun(partID0, datatype, oppfx):
           # hax mixing rule
           # basically, rather than do coreshell we may do internal mixing using
           # the two material fractions
+          # if you want to do core-shell instead of 
+          # effective medium approximation, don't include 'mixing' in the JSON file
           if 'mixing' in params:
             mr, mi = pp.calculateMixedRI(mr[0], mi[0], sf, params['mixing'])
             mr = [mr]
