@@ -7,11 +7,9 @@ def fun(ifn, dest):
   with open(ifn) as fp:
     data = json.load(fp)
 
-  pfx0 = data['pfx0']
   path = data['path']
   fnpre = data['fnpre']
   ratios = data['ratios'] # list of kernel shape id's to use (axis ratios for spheroids)
-  opn = data['opn'] # output file name
   contlen = data['contlen'] # length of content (define?)
   mrlen = data['mrlen'] # number of real refractive indices
   milen = data['milen'] # number of imaginary refractive indices
@@ -20,8 +18,9 @@ def fun(ifn, dest):
   elems = data['elems'] # scattering matrix element names
   numang = data['numang'] # number of angle points
   scatelemlen = data['scatelemlen'] # number of lines in scattering matrix element chunks
+  kernelname = data['name']
 
-  pfx = os.path.join(path, pfx0)
+  pfx = path
   sizes, x = getSizes(pfx)
 
   ratnums = []
@@ -30,7 +29,7 @@ def fun(ifn, dest):
     ratnums.append(rr)
   
   # output filename
-  fn = os.path.join(dest, opn)
+  fn = os.path.join(dest, f"kernel-{kernelname}.nc")
 
   ncdf = nc.Dataset(fn, 'w')
   mr = [0] * mrlen
