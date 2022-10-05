@@ -663,6 +663,7 @@ def fun(partID0, datatype, oppfx):
   """
 
   if mode =='mie':
+    # Define output scattering angles
     ang1 = np.linspace(0., 1., 100, endpoint=False)
     ang2 = np.linspace(1., 10., 100, endpoint=False)
     ang3 = np.linspace(10., 180., 171, endpoint=True)
