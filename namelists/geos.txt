@@ -1,0 +1,7 @@
+geosparticles/bc.json
+geosparticles/brc.json
+geosparticles/oc.json
+geosparticles/su.json
+geosparticles/du.json
+geosparticles/ni.json
+geosparticles/ss.json
