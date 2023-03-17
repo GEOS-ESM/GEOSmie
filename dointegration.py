@@ -16,7 +16,8 @@ import particleparams as pp
 These govern how integration and dimensions etc are done, so define them here
 """
 scatkeys = ['s11', 's12', 's22', 's33', 's34', 's44']
-scalarkeys = ['qext', 'qsca', 'qabs', 'g', 'qb', 'csca', 'cext']
+#scalarkeys = ['qext', 'qsca', 'qabs', 'g', 'qb', 'csca', 'cext']
+scalarkeys = ['qext', 'qsca', 'qabs', 'qb', 'g', 'csca', 'cext']
 extrakeys = ['ssa', 'bsca', 'bext', 'bbck', 'refreal', 'refimag', 'lidar_ratio']
 elekeys = ['pback']
 nlscalarkeys = ['mass', 'volume', 'area', 'rEff', 'rMass', 'rhop', 'growth_factor', 'rLow', 'rUp']
@@ -510,6 +511,7 @@ def calculatePSD(params, radind, onerh, rh, xxarr, drarr, rrat, lam):
     rMinUse = rmins[0]
     rMaxUse = rmaxs[0]
     rLow = rmins[0]
+#    rUp = rmaxs[0]
     rUp = rmaxs0[0]
 
     # no humidity growth for sigma
@@ -852,6 +854,7 @@ def fun(partID0, datatype, oppfx):
         qsca = np.array(ret['qsca'])
         qext = np.array(ret['qext'])
         qb = np.array(ret['qb'])
+        g  = np.array(ret['g'])
 
         """
         Calculate extra post-integration variables
@@ -878,6 +881,10 @@ def fun(partID0, datatype, oppfx):
         # mr and mi are arrays since we might have multimodal PSD with different components as modes
         ret['refreal'] = mr[0]
         ret['refimag'] = -np.abs(mi[0]) # force negative to be consistent with Pete's tables
+
+        pback = np.array(ret['pback'])
+#        print(rh[rhi],mr, mi, qext, qsca, g, qb*np.pi)
+#        print(rh[rhi],ref,rLow, rUp)
 
         for key in allkeys: # we can also save to allvals and write later
           if key in scatkeys:
@@ -987,8 +994,32 @@ def integratePSD(xxarr, rawret, psd, fracs, lam, reff0, rhop0, rhop):
     rMass0 = 4. / 3. * np.pi * rhop0 * reff_mass0 ** 3
 
     for key in retkeys:
-      qscawe = ['g']
 
+#     PRC: qb returned from the mie call is the backscatter efficiency 
+#     (to a factor of 2) consistent with what gets calculated from MIEV
+#     but Osku's original integration is inconsistent (and wrong?) with
+#     my IDL code. Since qb = p11*qsca/(4pi) I'm right here backing out
+#     P11 at each subbin, which I will integrate separately
+      qbwght = ['qb']
+      if key in qbwght:
+        thisq    = np.array(rawret[fraci]['qsca'])
+        beta     = np.sum(thisq*rarr2)*np.pi
+        k        = 2.*np.pi/lam
+        k2       = k*k
+        fac      = 4.*np.pi/(2.*k2*beta)
+        fac      = 1./beta
+        thisqb   = np.array(rawret[fraci][key])
+#        thisp11  = thisqb/(thisq)#*(4.*np.pi)
+#        thisp11  = thisqb*thisarea/np.pi
+        thisp11  = thisqb*thisarea*(4.*np.pi)
+        p11back  = np.dot(thisp11.T,psd[fraci])*fac#/np.sum(rarr2)
+#        print(p11back,beta,np.sum(psd[fraci])*fac)
+#        print(thisq)
+#        print(rrarr*1e6)
+#        print(thisp11)
+#        exit()
+
+      qscawe = ['g']
       if key in qscawe:
         thisweight *= rawret[fraci]['qsca'] # scale also by qext
 
@@ -998,6 +1029,10 @@ def integratePSD(xxarr, rawret, psd, fracs, lam, reff0, rhop0, rhop):
       if key in scatkeys:
         thisvals = rawret[fraci][key]
         thisret[key] = np.dot(thisvals.T, psd[fraci]) # integrate
+      elif key in qbwght:
+        thisret[key] = p11back*thisret['qsca']/(4.*np.pi)
+#        print(thisret[key])
+#        exit()
       else:
         """
         For external mixing we first need to integrate over the individual PSD, 
@@ -1019,6 +1054,7 @@ def integratePSD(xxarr, rawret, psd, fracs, lam, reff0, rhop0, rhop):
         elif mixing == 'dumix':
           thisint = np.dot(thisvals, psd[fraci] * thisweight)
           thisret[key] = thisint / sumarea
+#          print(key, np.sum(psd[fraci] * thisweight), sumarea, thisret[key])
 
     # calculate mass efficiencies here
     massConversion = 1. / rhop / thisret['rEff'] * thisret['rMass'] / rMass0
