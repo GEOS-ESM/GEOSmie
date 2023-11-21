@@ -116,13 +116,13 @@ class MieTABLE(object):
 
         aer_Nv = '/css/gmao/geos-it/products/Y2023/M02/D05/GEOS.it.asm.aer_inst_3hr_glo_C180x180x6_v72.GEOS5294.2023-02-05T1200.V01.nc4'
 
-        aer = xr.open_dataset(aer_Nv)
+        aer = xr.open_dataset(aer_Nv).variables
         
         # Dust
         # ----
         table = dirn + 'optics_DU.v7.nc'
         wavelengths = [470e-9, 550e-9, 670e-9, 870e-9]
-        mie = MieTable(table,wavelengths)
+        mie = MieTABLE(table,wavelengths)
         
         q_mass = aer['DU003'] * aer['DELP'] / 9.81
         rh = aer['RH']
@@ -134,7 +134,7 @@ class MieTABLE(object):
         # --
         table = dirn + 'optics_DU.v7.nc'
         wavelengths = [470e-9, 550e-9, 670e-9, 870e-9]
-        mie = MieTable(table,wavelengths)
+        mie = MieTABLES(table,wavelengths)
         
         q_mass = aer['BCPHILIC'] * aer['DELP'] / 9.81
         rh = aer['RH']
