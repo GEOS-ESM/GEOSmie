@@ -13,316 +13,394 @@ import pandas as pd
 
 __VERSION__ = '0.9.0'
 
+valid_names = ['aot',         'ssa',     'gf',    'gasym',  'g',
+               'RefIndex',    'pmom',    'area',  'volume',
+               'rhod',        'rhop',    'rEff',  'bbck',
+               'bsca',        'bext',
+               'aot_ssa_pmom',
+               'aot_ssa_gasym' ] 
+
 class MieTABLE(object):
 
-    def __init__ ( self, filename, wavelengths=None, nmom=None ):
-        """
-        Uses xarray to load Mie table from file name. On inout
+   def __init__ ( self, filename, wavelengths=None, nmom=None ):
+      """
+      Uses xarray to load Mie table from file name. On inout
 
-        filename    --- Mie Table file name
-        wavelengths --- desired wavelengths; if omitted all wavelengths on file
-        nmon        --- number of moments for phase function; if omitted no phase
-                        function needed (saves memory).
+      filename    --- Mie Table file name
+      wavelengths --- desired wavelengths; if omitted all wavelengths on file
+      nmon        --- number of moments for phase function; if omitted no phase
+                      function needed (saves memory).
 
-        """
-        mieDataset = xr.open_dataset(filename)
+      """
+      self.mieDS = xr.open_dataset(filename)
 
-        # Single Scattering properties (fix order of dimension, what is below comes from Fortran
-        # ----------------------------
-        self.wavelengths = mieDataset.coords['lambda']     # (c) wavelengths        [m]
-        self.rh          = mieDataset.coords['rh']         # (r) RH values   [fraction]
-        self.reff        = None                            # (b,r) effective radius [m]
-        self.bext        = None                            # (b,r,c) bext values [m2 kg-1]
-        self.bsca        = None                            # (b,r,c) bsca values [m2 kg-1]
-        self.bbck        = None                            # (b,r,c) bbck values [m2 kg-1]
-        self.g           = None                            # (b,r,c) asymmetry parameter
-        self.p11         = None                            # (b,r,c) Backscatter phase function, index 1 
-        self.p22         = None                            # (b,r,c) Backscatter phase function, index 5
-        self.pmom        = None                            # (p,m,b,r,c) moments of phase function
-        self.pback       = None                            # (p,b,r,c)   moments of backscatter phase function
-        self.gf          = None                            # (b,r) hygroscopic growth factor
-        self.rhop        = None                            # (b,r) wet particle density [kg m-3]
-        self.rhod        = None                            # (b,r) dry particle density [kg m-3]
-        self.vol         = None                            # (b,r) wet particle volume [m3 kg-1]
-        self.area        = None                            # (b,r) wet particle cross section [m2 kg-1]
-        self.refr        = None                            # (b,r,c) real part of refractive index
-        self.refi        = None                            # (b,r,c) imaginary part of refractive index
-        
-        vars_list = mieDataset.keys()
+      # Single Scattering properties (fix order of dimension, what is below comes from Fortran
+      # ----------------------------
+      self.wavelengths = self.mieDS.coords['lambda']     # (c) wavelengths        [m]
+      self.rh          = self.mieDS.coords['rh']         # (r) RH values   [fraction]
+      self.reff        = None                            # (b,r) effective radius [m]
+      self.bext        = None                            # (b,r,c) bext values [m2 kg-1]
+      self.bsca        = None                            # (b,r,c) bsca values [m2 kg-1]
+      self.bbck        = None                            # (b,r,c) bbck values [m2 kg-1]
+      self.g           = None                            # (b,r,c) asymmetry parameter
+      self.p11         = None                            # (b,r,c) Backscatter phase function, index 1 
+      self.p22         = None                            # (b,r,c) Backscatter phase function, index 5
+      self.pmom        = None                            # (p,m,b,r,c) moments of phase function
+      self.pback       = None                            # (p,b,r,c)   moments of backscatter phase function
+      self.gf          = None                            # (b,r) hygroscopic growth factor
+      self.rhop        = None                            # (b,r) wet particle density [kg m-3]
+      self.rhod        = None                            # (b,r) dry particle density [kg m-3]
+      self.vol         = None                            # (b,r) wet particle volume [m3 kg-1]
+      self.area        = None                            # (b,r) wet particle cross section [m2 kg-1]
+      self.refr        = None                            # (b,r,c) real part of refractive index
+      self.refi        = None                            # (b,r,c) imaginary part of refractive index
+      
+      self.vars_list = self.mieDS.keys()
 
-        if 'refreal' in vars_list:
-           self.refr       = mieDataset.refreal   
-        if 'refimag' in vars_list:
-           self.refi       = mieDataset.refimag
-        if 'pmom' in vars_list:
-           self.pmom       = mieDataset.pmom
-        if 'bbck' in vars_list:
-           self.bbck       = mieDataset.bbck
-        if 'g' in vars_list:
-           self.g          = mieDataset.g
-        if 'bext' in vars_list:
-           self.bext       = mieDataset.bext
-        if 'bsca' in vars_list:
-           self.bsca       = mieDataset.bsca
-        if 'rhop' in vars_list:
-           self.rhop       = mieDataset.rhop
-        if 'rhod' in vars_list:
-           self.rhod       = mieDataset.rhod
-        if 'rEff' in vars_list:
-           self.reff       = mieDataset.rEff
-        if 'growth_factor' in vars_list:
-           self.gf         = mieDataset.growth_factor
+      if 'refreal' in self.vars_list:
+         self.refr       = self.mieDS.refreal   
+      if 'refimag' in self.vars_list:
+         self.refi       = self.mieDS.refimag
+      if 'pmom' in self.vars_list:
+         self.pmom       = self.mieDS.pmom
+      if 'bbck' in self.vars_list:
+         self.bbck       = self.mieDS.bbck
+      if 'g' in self.vars_list:
+         self.g          = self.mieDS.g
+      if 'bext' in self.vars_list:
+         self.bext       = self.mieDS.bext
+      if 'bsca' in self.vars_list:
+         self.bsca       = self.mieDS.bsca
+      if 'rhop' in self.vars_list:
+         self.rhop       = self.mieDS.rhop
+      if 'rhod' in self.vars_list:
+         self.rhod       = self.mieDS.rhod
+      if 'rEff' in self.vars_list:
+         self.reff       = self.mieDS.rEff
+      if 'growth_factor' in self.vars_list:
+         self.gf         = self.mieDS.growth_factor
 
-#---
-    def getXXX(self, q_mass, rh, bin, wavelength=None, channel=None):
-        """
-        Given either channel or wavelength, compute XXX,
-        preserving the shape of the input:
+      
+#--
+   def getVariable(self, name, bin, rh=None, q_mass=None, wavelength=None, channel=None):
+      """
+       get Variables by the name
+       valid names ['aot'          'ssa'      'gf'     'gasym'   'g'
+                    'RefIndex'     'pmom'     'area'   'volume'
+                    'rhod'         'rhop'     'rEff'   'bbck'
+                    'bsca'         'bext'
+                    'aot_ssa_pmom'
+                    'aot_ssa_gasym' ] 
+      """
+      
+      bin_ = bin - 1
+      var  = None
+      if name not in valid_names: return None
+      if name == 'gasym' : name = 'g'
+      
+      if name in self.vars_list:
+         dims = self.mieDS[name].dims
+         if 'lambda' in self.mieDS[name].dims:
+            channel_ = channel
+            if not channel_:
+               assert wavelength, "Either wavelength or channel should be provided as input"
+               channel_= self.getChannel(wavelength)
 
-        q_mass ---  aerosol layer mass profile
-        rh     ---  relative humidity [0,1]
+            var = self.mieDS[name].isel({'radius':[bin_], 'lambda':[channel_]})              
+         else:
+            var = self.mieDS[name].isel({'radius':[bin_]})
+         if not (rh is None) :
+            var = var.interp(rh = rh)
 
-        Notice that q_mass and rh must have the same shape.
-        
-        """
+      if name == 'aot' :
+         if not q_mass is None:
+            bext =  self.getVariable('bext', bin, rh = rh, wavelength = wavelength, channel= channel)
+            var  = bext*q_mass
 
-        return None
-        
-#---
-    def getChannel(self, wavelength):
-        """
-        Returns channel number for a given wavelength.
-        """
-        t_tol   = 10e-9
-        channel = 0
-        for w in self.wavelengths.values:
-          if (wavelength-t_tol <= w and w<=wavelength+t_tol):
+      if name == "ssa":
+         # no interpolation
+         bext = self.getVariable('bext', bin, wavelength = wavlength, channel=channel)           
+         bsca = self.getVariable('bsca', bin, wavelength = wavlength, channel=channel)           
+         ssa = bsca/bext
+         # interpolate now
+         var = ssa.interp(rh = rh)
+
+      if name == 'volume':
+         rhod = self.getVariable('rhod', bin)
+         gf   = self.getVariable('gf', bin)
+         if not rhod and not gf:
+            vol = gf**3/rhod
+            var = vol.interp(rh = rh)
+
+      if name == 'area':
+         rhod  = self.getVariable('rhod', bin)
+         gf    = self.getVariable('gf', bin)
+         reff  = self.getVariable('gf', bin)
+         if not (rhod is None or gf is None or reff is None):
+            vol  = gf**3/rhod
+            area = vol/(4./3.*reff)
+            var  = area.interp(rh = rh)
+
+      if name == 'RefIndex':
+         refr = self.getVariable('refreal', bin, rh = rh, wavelength = wavelength, channel = channel)
+         refi = self.getVariable('refimag', bin, rh = rh, wavelength = wavelength, channel = channel)
+         var = (refr, refi)
+
+      if name == 'aot_ssa_pmom':
+         if not q_mass is None:
+            bext =  self.getVariable('bext', bin, wavelength = wavelength, channel= channel)
+            bsca =  self.getVariable('bsca', bin, wavelength = wavelength, channel= channel)
+            ssa  =(bsca/bext).inter(rh = rh)
+            aot = bext.inter(rh = rh) * q_mass
+            pmom = self.getVariable('pmom', bin, rh = rh, wavelength = wavelength, channel= channel)
+            var = (aot, ssa, pmom)
+
+      if name == 'aot_ssa_gasym':
+         if not q_mass is None:
+            bext =  self.getVariable('bext', bin, wavelength = wavelength, channel= channel)
+            bsca =  self.getVariable('bsca', bin, wavelength = wavelength, channel= channel)
+            ssa  =(bsca/bext).inter(rh = rh)
+            aot  = bext.inter(rh = rh) * q_mass
+            gasym= self.getVariable('g', bin, rh = rh, wavelength = wavelength, channel= channel)
+            var = (aot, ssa, gasym)
+
+      return var
+       
+#--
+   def getChannel(self, wavelength):
+      """
+      Returns channel number for a given wavelength.
+      """
+      t_tol   = 10e-9
+      channel = 0
+      for w in self.wavelengths.values:
+         if (wavelength-t_tol <= w and w<=wavelength+t_tol):
             return channel
-          channel +=1
-        return None
-#---
-    def getWavelength(self, channel):
-        """
-        Returns channel number for a given wavelength.
-        """
-        wavelength = this.wavelengths.values[channel]
-        return wavelength
+         channel +=1
+      return None
+#--
+   def getWavelength(self, channel):
+      """
+      Returns channel number for a given wavelength.
+      """
+      wavelength = this.wavelengths.values[channel]
+      return wavelength
 
-#---
-    def getAOT(self, q_mass, rh, bin, wavelength=None, channel=None):
-        """
-          Aerol extinction optical depth (used to be called TAU)
-        """
-        bin_     = bin - 1
-        channel_ = channel
-        if not channel_:
-           assert wavelength, "Either wavelength or channel should be provided as input"
-           channel_= self.getChannel(wavelength)
+#--
+   def getAOT(self, q_mass, rh, bin, wavelength=None, channel=None):
+      """
+        Aerol extinction optical depth (used to be called TAU)
+      """
+      bin_     = bin - 1
+      channel_ = channel
+      if not channel_:
+         assert wavelength, "Either wavelength or channel should be provided as input"
+         channel_= self.getChannel(wavelength)
   
-        bext_ = self.bext.isel( {'radius':[bin_], 'lambda':[channel_]}).interp(rh = rh)
-        AOT   = bext_*q_mass
-        return AOT
+      bext_ = self.bext.isel( {'radius':[bin_], 'lambda':[channel_]}).interp(rh = rh)
+      AOT   = bext_*q_mass
+      return AOT
 
-#---
-    def getGASYM(self, rh, bin, wavelength=None, channel=None):
-        """
-          Asymmetry parameter
-        """
-        bin_     = bin - 1
-        channel_ = channel
-        if not channel_:
-           assert wavelength, "Either wavelength or channel should be provided as input"
-           channel_= self.getChannel(wavelength)
+#--
+   def getGASYM(self, rh, bin, wavelength=None, channel=None):
+      """
+        Asymmetry parameter
+      """
+      bin_     = bin - 1
+      channel_ = channel
+      if not channel_:
+         assert wavelength, "Either wavelength or channel should be provided as input"
+         channel_= self.getChannel(wavelength)
 
-        GASYM = self.g.isel( {'radius':[bin_], 'lambda':[channel_]}).interp(rh = rh)
-        return GASYM
+      GASYM = self.g.isel( {'radius':[bin_], 'lambda':[channel_]}).interp(rh = rh)
+      return GASYM
 
-#---
-    def getBEXT(self, rh, bin, wavelength=None, channel=None):
-        """
-          Mass extinction efficiency [m2 (kg dry mass)-1]
-        """
-        bin_     = bin - 1
-        channel_ = channel
-        if not channel_:
-           assert wavelength, "Either wavelength or channel should be provided as input"
-           channel_= self.getChannel(wavelength)
+#--
+   def getBEXT(self, rh, bin, wavelength=None, channel=None):
+      """
+        Mass extinction efficiency [m2 (kg dry mass)-1]
+      """
+      bin_     = bin - 1
+      channel_ = channel
+      if not channel_:
+         assert wavelength, "Either wavelength or channel should be provided as input"
+         channel_= self.getChannel(wavelength)
 
-        BEXT = self.bext.isel( {'radius':[bin_], 'lambda':[channel_]}).interp(rh = rh)
-        return BEXT
+      BEXT = self.bext.isel( {'radius':[bin_], 'lambda':[channel_]}).interp(rh = rh)
+      return BEXT
 
-#---
-    def getBSCA(self, rh, bin, wavelength=None, channel=None):
-        """
-         Mass scattering efficiency [m2 (kg dry mass)-1]
-        """
-        bin_     = bin - 1
-        channel_ = channel
-        if not channel_:
-           assert wavelength, "Either wavelength or channel should be provided as input"
-           channel_= self.getChannel(wavelength)
+#--
+   def getBSCA(self, rh, bin, wavelength=None, channel=None):
+       """
+        Mass scattering efficiency [m2 (kg dry mass)-1]
+       """
+       bin_     = bin - 1
+       channel_ = channel
+       if not channel_:
+          assert wavelength, "Either wavelength or channel should be provided as input"
+          channel_= self.getChannel(wavelength)
 
-        BSCA = self.bsca.isel( {'radius':[bin_], 'lambda':[channel_]}).interp(rh = rh)
-        return BSCA
+       BSCA = self.bsca.isel( {'radius':[bin_], 'lambda':[channel_]}).interp(rh = rh)
+       return BSCA
 
-#---
-    def getSSA(self, rh, bin, wavelength=None, channel=None):
-        """
-         Single scattering albedo
-        """
-        bin_     = bin - 1
-        channel_ = channel
-        if not channel_:
-           assert wavelength, "Either wavelength or channel should be provided as input"
-           channel_= self.getChannel(wavelength)
+#--
+   def getSSA(self, rh, bin, wavelength=None, channel=None):
+      """
+       Single scattering albedo
+      """
+      bin_     = bin - 1
+      channel_ = channel
+      if not channel_:
+         assert wavelength, "Either wavelength or channel should be provided as input"
+         channel_= self.getChannel(wavelength)
 
-        bext_ = self.bext.isel( {'radius':[bin_], 'lambda':[channel_]})
-        bsca_ = self.bsca.isel( {'radius':[bin_], 'lambda':[channel_]})
-        SSA   = (bsca_/bext_).interp(rh = rh)
-        return SSA
+      bext_ = self.bext.isel( {'radius':[bin_], 'lambda':[channel_]})
+      bsca_ = self.bsca.isel( {'radius':[bin_], 'lambda':[channel_]})
+      SSA   = (bsca_/bext_).interp(rh = rh)
+      return SSA
 
-#---
-    def getBBCK(self, rh, bin, wavelength=None, channel=None):
-        """
-          Mass backscatter efficiency [m2 (kg dry mass)-1]
-        """
-        bin_     = bin - 1
-        channel_ = channel
-        if not channel_:
-           assert wavelength, "Either wavelength or channel should be provided as input"
-           channel_= self.getChannel(wavelength)
+#--
+   def getBBCK(self, rh, bin, wavelength=None, channel=None):
+      """
+        Mass backscatter efficiency [m2 (kg dry mass)-1]
+      """
+      bin_     = bin - 1
+      channel_ = channel
+      if not channel_:
+         assert wavelength, "Either wavelength or channel should be provided as input"
+         channel_= self.getChannel(wavelength)
 
-        BBCK  = self.bbck.isel( {'radius':[bin_], 'lambda':[channel_]}).interp(rh = rh)
-        return BBCK
+      BBCK  = self.bbck.isel( {'radius':[bin_], 'lambda':[channel_]}).interp(rh = rh)
+      return BBCK
 
-#---
-    def getREFF(self, rh, bin):
-        """
-         Effective radius (micron) 
-        """
-        bin_     = bin - 1
-        REFF  = self.reff.isel({'radius':[bin_]}).interp(rh = rh)
-        return REFF
+#--
+   def getREFF(self, rh, bin):
+      """
+       Effective radius (micron) 
+      """
+      bin_     = bin - 1
+      REFF  = self.reff.isel({'radius':[bin_]}).interp(rh = rh)
+      return REFF
 
-#---
-    def getPMOM(self, rh, bin, wavelength=None, channel=None):
-        """
-         Moments of phase function
-        """
-        bin_     = bin - 1
-        channel_ = channel
-        if not channel_:
-           assert wavelength, "Either wavelength or channel should be provided as input"
-           channel_= self.getChannel(wavelength)
+#--
+   def getPMOM(self, rh, bin, wavelength=None, channel=None):
+      """
+       Moments of phase function
+      """
+      bin_     = bin - 1
+      channel_ = channel
+      if not channel_:
+         assert wavelength, "Either wavelength or channel should be provided as input"
+         channel_= self.getChannel(wavelength)
 
-        PMOM  = self.pmom.isel( {'radius':[bin_], 'lambda':[channel_]}).interp(rh = rh)
-        return PMOM
+      PMOM  = self.pmom.isel( {'radius':[bin_], 'lambda':[channel_]}).interp(rh = rh)
+      return PMOM
 
-#---
-    def getGF(self, rh, bin):
-        """
-         Growth factor (ratio of wet to dry radius) 
-        """
-        bin_ = bin - 1
-        GF   = self.gf.isel( {'radius':[bin_]}).interp(rh = rh)
-        return GF
+#--
+   def getGF(self, rh, bin):
+      """
+       Growth factor (ratio of wet to dry radius) 
+      """
+      bin_ = bin - 1
+      GF   = self.gf.isel( {'radius':[bin_]}).interp(rh = rh)
+      return GF
 
-#---
-    def getRHOP(self, rh, bin):
-        """
-         Wet particle density [kg m-3] 
-        """
-        bin_  = bin - 1
-        RHOP  = self.rhop.isel( {'radius':[bin_]}).interp(rh = rh)
-        return RHOP
+#--
+   def getRHOP(self, rh, bin):
+      """
+       Wet particle density [kg m-3] 
+      """
+      bin_  = bin - 1
+      RHOP  = self.rhop.isel( {'radius':[bin_]}).interp(rh = rh)
+      return RHOP
 
-#---
-    def getRHOD(self, rh, bin):
-        """
-         Dry particle density [kg m-3] 
-        """
-        bin_  = bin - 1
-        RHOD  = self.rhod.isel( {'radius':[bin_]}).interp(rh = rh)
-        return RHOD
-    
-#---
-    def getVOLUME(self, rh, bin):
-        """
-          Wet particle volume [m3 kg-1]
-        """
-        bin_   = bin - 1
-        rhod   = self.rhod.isel({'radius':[bin_]})
-        gf     = self.gf.isel({'radius':[bin_]})
-        vol    = gf**3/rhod
-        VOLUME = vol.interp(rh = rh)
-        return VOLUME
-    
-#---
-    def getAREA(self, rh, bin):
-        """
-          Wet particle cross section [m2 kg-1]
-        """
-        bin_   = bin - 1
+#--
+   def getRHOD(self, rh, bin):
+      """
+       Dry particle density [kg m-3] 
+      """
+      bin_  = bin - 1
+      RHOD  = self.rhod.isel( {'radius':[bin_]}).interp(rh = rh)
+      return RHOD
+   
+#--
+   def getVOLUME(self, rh, bin):
+      """
+        Wet particle volume [m3 kg-1]
+      """
+      bin_   = bin - 1
+      rhod   = self.rhod.isel({'radius':[bin_]})
+      gf     = self.gf.isel({'radius':[bin_]})
+      vol    = gf**3/rhod
+      VOLUME = vol.interp(rh = rh)
+      return VOLUME
+   
+#--
+   def getAREA(self, rh, bin):
+      """
+        Wet particle cross section [m2 kg-1]
+      """
+      bin_   = bin - 1
 
-        rhod   = self.rhod.isel({'radius':[bin_]})
-        gf     = self.gf.isel({'radius':[bin_]})
-        vol    = gf**3/rhod
-        reff   = self.reff.isel({'radius':[bin_]})
-        area   = vol /(4./3.*reff)
-        AREA   = area.interp(rh = rh)
-        return AREA
-    
-#---
-    def getVECTOR(self, q_mass, rh, bin, wavelength=None, channel=None):
-        """
-          vector of (aot, ssa, pmom)
-        """
-        bin_     = bin - 1
-        channel_ = channel
-        if not channel_:
-           assert wavelength, "either provide wavelength or channel"
-           channel_= self.getChannel(wavelength)
+      rhod   = self.rhod.isel({'radius':[bin_]})
+      gf     = self.gf.isel({'radius':[bin_]})
+      vol    = gf**3/rhod
+      reff   = self.reff.isel({'radius':[bin_]})
+      area   = vol /(4./3.*reff)
+      AREA   = area.interp(rh = rh)
+      return AREA
+   
+#--
+   def getVECTOR(self, q_mass, rh, bin, wavelength=None, channel=None):
+      """
+        vector of (aot, ssa, pmom)
+      """
+      bin_     = bin - 1
+      channel_ = channel
+      if not channel_:
+         assert wavelength, "either provide wavelength or channel"
+         channel_= self.getChannel(wavelength)
 
-        bext_ = self.bext.isel( {'radius':[bin_], 'lambda':[channel_]})
-        bsca_ = self.bsca.isel( {'radius':[bin_], 'lambda':[channel_]})
-        ssa   = bsca_/bext_        
-        AOT   = bext_.interp(rh = rh)*q_mass
-        SSA   = ssa.interp(rh = rh)
-        PMOM  = self.getPMOM(rh, bin, channel=channel_)
-        return (AOT, SSA, PMOM)
-#---
-    def getScalar(self, q_mass, rh, bin, wavelength=None, channel=None):
-        """
-          (aot, ssa, gasym)
-        """
-        bin_     = bin - 1
-        channel_ = channel
-        if not channel_:
-           assert wavelength, "either provide wavelength or channel"
-           channel_= self.getChannel(wavelength)
+      bext_ = self.bext.isel( {'radius':[bin_], 'lambda':[channel_]})
+      bsca_ = self.bsca.isel( {'radius':[bin_], 'lambda':[channel_]})
+      ssa   = bsca_/bext_        
+      AOT   = bext_.interp(rh = rh)*q_mass
+      SSA   = ssa.interp(rh = rh)
+      PMOM  = self.getPMOM(rh, bin, channel=channel_)
+      return (AOT, SSA, PMOM)
+#--
+   def getScalar(self, q_mass, rh, bin, wavelength=None, channel=None):
+      """
+        (aot, ssa, gasym)
+      """
+      bin_     = bin - 1
+      channel_ = channel
+      if not channel_:
+         assert wavelength, "either provide wavelength or channel"
+         channel_= self.getChannel(wavelength)
 
-        bext_ = self.bext.isel( {'radius':[bin_], 'lambda':[channel_]})
-        bsca_ = self.bsca.isel( {'radius':[bin_], 'lambda':[channel_]})
-        AOT   = bext_.interp(rh = rh)*q_mass
-        SSA   = (bsca_/bext_).interp(rh = rh)
-        GASYM = self.g.isel( {'radius':[bin_], 'lambda':[channel_]}).interp(rh = rh)
-        return (AOT, SSA, GASYM)
+      bext_ = self.bext.isel( {'radius':[bin_], 'lambda':[channel_]})
+      bsca_ = self.bsca.isel( {'radius':[bin_], 'lambda':[channel_]})
+      AOT   = bext_.interp(rh = rh)*q_mass
+      SSA   = (bsca_/bext_).interp(rh = rh)
+      GASYM = self.g.isel( {'radius':[bin_], 'lambda':[channel_]}).interp(rh = rh)
+      return (AOT, SSA, GASYM)
 
-#---
-    def getRefIndex(self, rh, bin, wavelength=None, channel=None):
-        """
-          Mass backscatter efficiency [m2 (kg dry mass)-1]
-        """
-        bin_     = bin - 1
-        channel_ = channel
-        if not channel_:
-           assert wavelength, "Either wavelength or channel should be provided as input"
-           channel_= self.getChannel(wavelength)
+#--
+   def getRefIndex(self, rh, bin, wavelength=None, channel=None):
+      """
+        Mass backscatter efficiency [m2 (kg dry mass)-1]
+      """
+      bin_     = bin - 1
+      channel_ = channel
+      if not channel_:
+         assert wavelength, "Either wavelength or channel should be provided as input"
+         channel_= self.getChannel(wavelength)
 
-        REFR  = self.refr.isel( {'radius':[bin_], 'lambda':[channel_]}).interp(rh = rh)
-        REFI  = self.refi.isel( {'radius':[bin_], 'lambda':[channel_]}).interp(rh = rh)
-        return (REFR, REFI) 
-    
+      REFR  = self.refr.isel( {'radius':[bin_], 'lambda':[channel_]}).interp(rh = rh)
+      REFI  = self.refi.isel( {'radius':[bin_], 'lambda':[channel_]}).interp(rh = rh)
+      return (REFR, REFI) 
+   
 #______________________________________________________________
 
 if __name__ == "__main__":
@@ -349,6 +427,8 @@ if __name__ == "__main__":
    rh     = aer['RH']
 
    aot    = mie.getAOT(q_mass,rh, 3, wavelength=550e-9)
+   aot1   = mie.getVariable('aot', 3, rh=rh, q_mass=q_mass, wavelength=550e-9)
+   print(aot == aot1)
    gasym  = mie.getGASYM(rh, 3, wavelength=550e-9)
    bext   = mie.getBEXT(rh, 3, wavelength=550e-9)
    bsca   = mie.getBSCA(rh, 3, wavelength=550e-9)
