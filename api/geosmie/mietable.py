@@ -96,7 +96,6 @@ class MieTABLE(object):
       if name == 'gf'    : name = 'growth_factor'
       
       if name in self.vars_list:
-         dims = self.mieDS[name].dims
          if 'lambda' in self.mieDS[name].dims:
             channel_ = channel
             if channel_ is None:
@@ -437,9 +436,7 @@ if __name__ == "__main__":
    rh     = aer['RH']
 
    aot    = mie.getAOT(q_mass,rh, 3, wavelength=550e-9)
-   print(aot.name)
    aot1   = mie.getVariable('aot', 3, rh=rh, q_mass=q_mass, wavelength=550e-9)
-   print(aot1.name)
 
    gasym  = mie.getGASYM(rh, 3, wavelength=550e-9)
    gasym1 = mie.getVariable('gasym', 3, rh=rh, wavelength=550e-9)
