@@ -113,7 +113,7 @@ class MieTABLE(object):
       if name == 'aot' :
          if q_mass is not None:
             bext =  self.getVariable('bext', bin, rh = rh, wavelength = wavelength, channel= channel)
-            var  = bext*q_mass
+            var  = (bext*q_mass).rename('aot')
          else:
             print('aot needs q_mass as input')
 
@@ -121,14 +121,14 @@ class MieTABLE(object):
          bext = self.getVariable('bext', bin, wavelength = wavelength, channel=channel)           
          bsca = self.getVariable('bsca', bin, wavelength = wavelength, channel=channel)           
          ssa  = bsca/bext
-         var  = ssa.interp(rh = rh)
+         var  = ssa.interp(rh = rh).rename('ssa')
 
       if name == 'volume':
          rhod = self.getVariable('rhod', bin)
          gf   = self.getVariable('gf', bin)
          if rhod is not None and gf is not None:
             vol = gf**3/rhod
-            var = vol.interp(rh = rh)
+            var = vol.interp(rh = rh).rename('volume')
          else:
             print('vol needs rhod and growth factor in the table')
 
@@ -139,7 +139,7 @@ class MieTABLE(object):
          if (rhod is not None and gf is not None and reff is not None):
             vol  = gf**3/rhod
             area = vol/(4./3.*reff)
-            var  = area.interp(rh = rh)
+            var  = area.interp(rh = rh).rename('area')
          else:
             print('area needs rhod, growth factor and rEff in the table')
 
@@ -152,8 +152,8 @@ class MieTABLE(object):
          if q_mass is not None:
             bext = self.getVariable('bext', bin, wavelength = wavelength, channel= channel)
             bsca = self.getVariable('bsca', bin, wavelength = wavelength, channel= channel)
-            ssa  = (bsca/bext).interp(rh = rh)
-            aot  = bext.interp(rh = rh) * q_mass
+            ssa  = (bsca/bext).interp(rh = rh).rename('ssa')
+            aot  = (bext.interp(rh = rh) * q_mass).rename('aot')
             if 'pmom' in name:
                pmom = self.getVariable('pmom', bin, rh = rh, wavelength = wavelength, channel= channel)
                var  = (aot, ssa, pmom)
@@ -166,14 +166,14 @@ class MieTABLE(object):
       if name == 'p11':
          p11 = self.getVariable('pback', bin, wavelength = wavelength, channel= channel)
          if (p11 is not None):
-            var = p11.isel({"nPol": [0]}).interp(rh = rh)
+            var = p11.isel({"nPol": [0]}).interp(rh = rh).rename('p11')
          else:
             print('p11 needs pback in the table')
 
       if name == 'p22':
          p22 = self.getVariable('pback', bin, wavelength = wavelength, channel= channel)
          if (p22 is not None):
-            var = p22.isel({"nPol": [4]}).interp(rh = rh)
+            var = p22.isel({"nPol": [4]}).interp(rh = rh).rename('p22')
          else:
             print('p22 needs pback in the table')
  
@@ -437,7 +437,9 @@ if __name__ == "__main__":
    rh     = aer['RH']
 
    aot    = mie.getAOT(q_mass,rh, 3, wavelength=550e-9)
+   print(aot.name)
    aot1   = mie.getVariable('aot', 3, rh=rh, q_mass=q_mass, wavelength=550e-9)
+   print(aot1.name)
 
    gasym  = mie.getGASYM(rh, 3, wavelength=550e-9)
    gasym1 = mie.getVariable('gasym', 3, rh=rh, wavelength=550e-9)
