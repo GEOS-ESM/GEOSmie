@@ -32,7 +32,7 @@ class MieTABLE(object):
                       function needed (saves memory).
 
       """
-      self.mieDS = xr.open_dataset(filename)
+      self.mieDS       = xr.open_dataset(filename)
 
       # Single Scattering properties (fix order of dimension, what is below comes from Fortran
       # ----------------------------
@@ -55,30 +55,30 @@ class MieTABLE(object):
       self.refr        = None                            # (b,r,c) real part of refractive index
       self.refi        = None                            # (b,r,c) imaginary part of refractive index
       
-      self.vars_list = self.mieDS.keys()
+      self.vars_list   = self.mieDS.keys()
 
       if 'refreal' in self.vars_list:
-         self.refr       = self.mieDS.refreal   
+         self.refr     = self.mieDS.refreal   
       if 'refimag' in self.vars_list:
-         self.refi       = self.mieDS.refimag
+         self.refi     = self.mieDS.refimag
       if 'pmom' in self.vars_list:
-         self.pmom       = self.mieDS.pmom
+         self.pmom     = self.mieDS.pmom
       if 'bbck' in self.vars_list:
-         self.bbck       = self.mieDS.bbck
+         self.bbck     = self.mieDS.bbck
       if 'g' in self.vars_list:
-         self.g          = self.mieDS.g
+         self.g        = self.mieDS.g
       if 'bext' in self.vars_list:
-         self.bext       = self.mieDS.bext
+         self.bext     = self.mieDS.bext
       if 'bsca' in self.vars_list:
-         self.bsca       = self.mieDS.bsca
+         self.bsca     = self.mieDS.bsca
       if 'rhop' in self.vars_list:
-         self.rhop       = self.mieDS.rhop
+         self.rhop     = self.mieDS.rhop
       if 'rhod' in self.vars_list:
-         self.rhod       = self.mieDS.rhod
+         self.rhod     = self.mieDS.rhod
       if 'rEff' in self.vars_list:
-         self.reff       = self.mieDS.rEff
+         self.reff     = self.mieDS.rEff
       if 'growth_factor' in self.vars_list:
-         self.gf         = self.mieDS.growth_factor
+         self.gf       = self.mieDS.growth_factor
 
       
 #--
@@ -95,48 +95,49 @@ class MieTABLE(object):
       
       bin_ = bin - 1
       var  = None
-      if name not in valid_names: return None
+      if name not in valid_names:
+         print("getVariable does not support " + name)
+
       if name == 'gasym' : name = 'g'
       
       if name in self.vars_list:
          dims = self.mieDS[name].dims
          if 'lambda' in self.mieDS[name].dims:
             channel_ = channel
-            if not channel_:
-               assert wavelength, "Either wavelength or channel should be provided as input"
+            if channel_ is None:
+               assert wavelength is not None, "Either wavelength or channel should be provided as input"
                channel_= self.getChannel(wavelength)
+               assert channel_ is not None, "Cannot find the wavelength: " + str(wavelength)
 
             var = self.mieDS[name].isel({'radius':[bin_], 'lambda':[channel_]})              
          else:
             var = self.mieDS[name].isel({'radius':[bin_]})
-         if not (rh is None) :
+         if (rh is not None) :
             var = var.interp(rh = rh)
 
       if name == 'aot' :
-         if not q_mass is None:
+         if q_mass is not None:
             bext =  self.getVariable('bext', bin, rh = rh, wavelength = wavelength, channel= channel)
             var  = bext*q_mass
 
       if name == "ssa":
-         # no interpolation
          bext = self.getVariable('bext', bin, wavelength = wavlength, channel=channel)           
          bsca = self.getVariable('bsca', bin, wavelength = wavlength, channel=channel)           
          ssa = bsca/bext
-         # interpolate now
          var = ssa.interp(rh = rh)
 
       if name == 'volume':
          rhod = self.getVariable('rhod', bin)
          gf   = self.getVariable('gf', bin)
-         if not rhod and not gf:
+         if rhod is not None and gf is not None:
             vol = gf**3/rhod
             var = vol.interp(rh = rh)
 
       if name == 'area':
          rhod  = self.getVariable('rhod', bin)
          gf    = self.getVariable('gf', bin)
-         reff  = self.getVariable('gf', bin)
-         if not (rhod is None or gf is None or reff is None):
+         reff  = self.getVariable('rEff', bin)
+         if (rhod is not None and gf is not None and reff is not None):
             vol  = gf**3/rhod
             area = vol/(4./3.*reff)
             var  = area.interp(rh = rh)
@@ -146,42 +147,36 @@ class MieTABLE(object):
          refi = self.getVariable('refimag', bin, rh = rh, wavelength = wavelength, channel = channel)
          var = (refr, refi)
 
-      if name == 'aot_ssa_pmom':
-         if not q_mass is None:
-            bext =  self.getVariable('bext', bin, wavelength = wavelength, channel= channel)
-            bsca =  self.getVariable('bsca', bin, wavelength = wavelength, channel= channel)
-            ssa  =(bsca/bext).inter(rh = rh)
-            aot = bext.inter(rh = rh) * q_mass
-            pmom = self.getVariable('pmom', bin, rh = rh, wavelength = wavelength, channel= channel)
-            var = (aot, ssa, pmom)
-
-      if name == 'aot_ssa_gasym':
-         if not q_mass is None:
-            bext =  self.getVariable('bext', bin, wavelength = wavelength, channel= channel)
-            bsca =  self.getVariable('bsca', bin, wavelength = wavelength, channel= channel)
-            ssa  =(bsca/bext).inter(rh = rh)
+      if name == 'aot_ssa_pmom' or name == 'aot_ssa_gasym':
+         if q_mass is not None:
+            bext = self.getVariable('bext', bin, wavelength = wavelength, channel= channel)
+            bsca = self.getVariable('bsca', bin, wavelength = wavelength, channel= channel)
+            ssa  = (bsca/bext).inter(rh = rh)
             aot  = bext.inter(rh = rh) * q_mass
-            gasym= self.getVariable('g', bin, rh = rh, wavelength = wavelength, channel= channel)
-            var = (aot, ssa, gasym)
-
+            if 'pmom' in name:
+               pmom = self.getVariable('pmom', bin, rh = rh, wavelength = wavelength, channel= channel)
+               var  = (aot, ssa, pmom)
+            if 'gasym' in name:
+               gasym = self.getVariable('g', bin, rh = rh, wavelength = wavelength, channel= channel)
+               var   = (aot, ssa, gasym)
+         else:
+            print('Need q_mass as input')
+ 
       return var
        
 #--
    def getChannel(self, wavelength):
       """
-      Returns channel number for a given wavelength.
+        Returns channel number for a given wavelength. If it is not found, return None
       """
-      t_tol   = 10e-9
-      channel = 0
-      for w in self.wavelengths.values:
-         if (wavelength-t_tol <= w and w<=wavelength+t_tol):
-            return channel
-         channel +=1
-      return None
+      tol_    = 10e-9
+      channel = self.mieDS.indexes['lambda'].get_indexer([wavelength], method = 'nearest', tolerance = tol_)[0] 
+      return channel if channel != -1 else None 
+
 #--
    def getWavelength(self, channel):
       """
-      Returns channel number for a given wavelength.
+        Returns channel number for a given wavelength.
       """
       wavelength = this.wavelengths.values[channel]
       return wavelength
@@ -278,8 +273,8 @@ class MieTABLE(object):
       """
        Effective radius (micron) 
       """
-      bin_     = bin - 1
-      REFF  = self.reff.isel({'radius':[bin_]}).interp(rh = rh)
+      bin_   = bin - 1
+      REFF   = self.reff.isel({'radius':[bin_]}).interp(rh = rh)
       return REFF
 
 #--
