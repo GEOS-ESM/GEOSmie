@@ -13,10 +13,10 @@ import pandas as pd
 
 __VERSION__ = '0.9.0'
 
-valid_names = ['aot',         'ssa',     'gf',    'gasym',  'g',
-               'RefIndex',    'pmom',    'area',  'volume',
-               'rhod',        'rhop',    'rEff',  'bbck',
-               'bsca',        'bext',
+valid_names = ['aot',         'ssa',     'gf',     'gasym',  'g',   'growth_factor',
+               'RefIndex',    'pmom',    'area',   'volume', 'p11', 'p22', 'pback',
+               'rhod',        'rhop',    'rEff',   'bbck',
+               'bsca',        'bext',    'refreal','refimag',
                'aot_ssa_pmom',
                'aot_ssa_gasym' ] 
 
@@ -84,13 +84,7 @@ class MieTABLE(object):
 #--
    def getVariable(self, name, bin, rh=None, q_mass=None, wavelength=None, channel=None):
       """
-       get Variables by the name
-       valid names ['aot'          'ssa'      'gf'     'gasym'   'g'
-                    'RefIndex'     'pmom'     'area'   'volume'
-                    'rhod'         'rhop'     'rEff'   'bbck'
-                    'bsca'         'bext'
-                    'aot_ssa_pmom'
-                    'aot_ssa_gasym' ] 
+       get Variables by the name in the list valid_names
       """
       
       bin_ = bin - 1
@@ -99,6 +93,7 @@ class MieTABLE(object):
          print("getVariable does not support " + name)
 
       if name == 'gasym' : name = 'g'
+      if name == 'gf'    : name = 'growth_factor'
       
       if name in self.vars_list:
          dims = self.mieDS[name].dims
@@ -119,12 +114,14 @@ class MieTABLE(object):
          if q_mass is not None:
             bext =  self.getVariable('bext', bin, rh = rh, wavelength = wavelength, channel= channel)
             var  = bext*q_mass
+         else:
+            print('aot needs q_mass as input')
 
       if name == "ssa":
-         bext = self.getVariable('bext', bin, wavelength = wavlength, channel=channel)           
-         bsca = self.getVariable('bsca', bin, wavelength = wavlength, channel=channel)           
-         ssa = bsca/bext
-         var = ssa.interp(rh = rh)
+         bext = self.getVariable('bext', bin, wavelength = wavelength, channel=channel)           
+         bsca = self.getVariable('bsca', bin, wavelength = wavelength, channel=channel)           
+         ssa  = bsca/bext
+         var  = ssa.interp(rh = rh)
 
       if name == 'volume':
          rhod = self.getVariable('rhod', bin)
@@ -132,6 +129,8 @@ class MieTABLE(object):
          if rhod is not None and gf is not None:
             vol = gf**3/rhod
             var = vol.interp(rh = rh)
+         else:
+            print('vol needs rhod and growth factor in the table')
 
       if name == 'area':
          rhod  = self.getVariable('rhod', bin)
@@ -141,6 +140,8 @@ class MieTABLE(object):
             vol  = gf**3/rhod
             area = vol/(4./3.*reff)
             var  = area.interp(rh = rh)
+         else:
+            print('area needs rhod, growth factor and rEff in the table')
 
       if name == 'RefIndex':
          refr = self.getVariable('refreal', bin, rh = rh, wavelength = wavelength, channel = channel)
@@ -151,8 +152,8 @@ class MieTABLE(object):
          if q_mass is not None:
             bext = self.getVariable('bext', bin, wavelength = wavelength, channel= channel)
             bsca = self.getVariable('bsca', bin, wavelength = wavelength, channel= channel)
-            ssa  = (bsca/bext).inter(rh = rh)
-            aot  = bext.inter(rh = rh) * q_mass
+            ssa  = (bsca/bext).interp(rh = rh)
+            aot  = bext.interp(rh = rh) * q_mass
             if 'pmom' in name:
                pmom = self.getVariable('pmom', bin, rh = rh, wavelength = wavelength, channel= channel)
                var  = (aot, ssa, pmom)
@@ -160,7 +161,21 @@ class MieTABLE(object):
                gasym = self.getVariable('g', bin, rh = rh, wavelength = wavelength, channel= channel)
                var   = (aot, ssa, gasym)
          else:
-            print('Need q_mass as input')
+            print( name + ' needs q_mass as input')
+
+      if name == 'p11':
+         p11 = self.getVariable('pback', bin, wavelength = wavelength, channel= channel)
+         if (p11 is not None):
+            var = p11.isel({"nPol": [0]}).interp(rh = rh)
+         else:
+            print('p11 needs pback in the table')
+
+      if name == 'p22':
+         p22 = self.getVariable('pback', bin, wavelength = wavelength, channel= channel)
+         if (p22 is not None):
+            var = p22.isel({"nPol": [4]}).interp(rh = rh)
+         else:
+            print('p22 needs pback in the table')
  
       return var
        
@@ -192,7 +207,7 @@ class MieTABLE(object):
          assert wavelength, "Either wavelength or channel should be provided as input"
          channel_= self.getChannel(wavelength)
   
-      bext_ = self.bext.isel( {'radius':[bin_], 'lambda':[channel_]}).interp(rh = rh)
+      bext_ = self.bext.isel({'radius':[bin_], 'lambda':[channel_]}).interp(rh = rh)
       AOT   = bext_*q_mass
       return AOT
 
@@ -423,15 +438,36 @@ if __name__ == "__main__":
 
    aot    = mie.getAOT(q_mass,rh, 3, wavelength=550e-9)
    aot1   = mie.getVariable('aot', 3, rh=rh, q_mass=q_mass, wavelength=550e-9)
-   print(aot == aot1)
+
    gasym  = mie.getGASYM(rh, 3, wavelength=550e-9)
+   gasym1 = mie.getVariable('gasym', 3, rh=rh, wavelength=550e-9)
+
    bext   = mie.getBEXT(rh, 3, wavelength=550e-9)
+   bext1  = mie.getVariable('bext', 3, rh=rh, wavelength=550e-9)
+
    bsca   = mie.getBSCA(rh, 3, wavelength=550e-9)
+   bsca1  = mie.getVariable('bsca', 3, rh=rh, wavelength=550e-9)
+
    ssa    = mie.getSSA(rh, 3, wavelength=550e-9)
+   ssa1   = mie.getVariable('ssa', 3, rh=rh, wavelength=550e-9)
+
    bbck   = mie.getBBCK(rh, 3, wavelength=550e-9)
+   bbck1  = mie.getVariable('bbck', 3, rh=rh, wavelength=550e-9)
+
    reff   = mie.getREFF(rh, 3)
-   (refr, refi)     = mie.getRefIndex(rh, 3, wavelength=550e-9) 
-   (aot, ssa,gasym) = mie.getScalar(q_mass,rh, 3, wavelength=550e-9)
+   reff1  = mie.getVariable('rEff', 3, rh=rh)
+
+   (refr, refi)         = mie.getRefIndex(rh, 3, wavelength=550e-9) 
+   (refr1, refi1)       = mie.getVariable('RefIndex', 3, rh=rh, wavelength=550e-9)
+
+   (aot, ssa,gasym)     = mie.getScalar(q_mass,rh, 3, wavelength=550e-9)
+   (aot1, ssa1, gasym1) = mie.getVariable('aot_ssa_gasym', 3, q_mass=q_mass, rh=rh, wavelength=550e-9)
+
+   vol  = mie.getVariable('volume', 3, rh=rh)
+   p11  = mie.getVariable('p11', 3, rh=rh, wavelength=550e-9)
+   p21  = mie.getVariable('p21', 3, rh=rh, wavelength=550e-9)
+   #pmom  = mie.getVariable('pmom', 3, q_mass=q_mass, rh=rh, wavelength=550e-9)
+
    #gf    = mie.getGF(rh, 3)
    #rhop  = mie.getRHOP(rh, 3)
    #rhod  = mie.getRHOD(rh, 3)
