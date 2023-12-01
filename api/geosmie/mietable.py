@@ -464,7 +464,7 @@ if __name__ == "__main__":
 
    vol  = mie.getVariable('volume', 3, rh=rh)
    p11  = mie.getVariable('p11', 3, rh=rh, wavelength=550e-9)
-   p21  = mie.getVariable('p21', 3, rh=rh, wavelength=550e-9)
+   p22  = mie.getVariable('p22, 3, rh=rh, wavelength=550e-9)
    #pmom  = mie.getVariable('pmom', 3, q_mass=q_mass, rh=rh, wavelength=550e-9)
 
    #gf    = mie.getGF(rh, 3)
