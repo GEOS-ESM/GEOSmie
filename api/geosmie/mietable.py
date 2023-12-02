@@ -87,25 +87,25 @@ class MieTABLE(object):
          var = self.__getTable__(name, bin, wavelength=wavelength)
          var = var.interp(rh=rh)
 
-      if name == 'aot' :
+      elif name == 'aot' :
          assert q_mass is not None, 'aot needs q_mass as input'
          bext  = self.__getTable__('bext', bin, wavelength=wavelength)
          bext_ = bext.interp(rh=rh)
          var   = (bext_*q_mass).rename('aot')
 
-      if name == "ssa":
+      elif name == "ssa":
          bext = self.__getTable__('bext', bin, wavelength=wavelength)           
          bsca = self.__getTable__('bsca', bin, wavelength=wavelength)           
          ssa  = bsca/bext
          var  = ssa.interp(rh=rh).rename('ssa')
 
-      if name == 'volume':
+      elif name == 'volume':
          rhod = self.__getTable__('rhod', bin)
          gf   = self.__getTable__('gf',   bin)
          vol  = gf**3/rhod
-         var = vol.interp(rh=rh).rename('volume')
+         var  = vol.interp(rh=rh).rename('volume')
 
-      if name == 'area':
+      elif name == 'area':
          rhod  = self.__getTable__('rhod', bin)
          gf    = self.__getTable__('gf',   bin)
          reff  = self.__getTable__('rEff', bin)
@@ -113,12 +113,12 @@ class MieTABLE(object):
          area  = vol/(4./3.*reff)
          var   = area.interp(rh=rh).rename('area')
 
-      if name == 'RefIndex':
+      elif name == 'RefIndex':
          refr = self.__getTable__('refreal', bin, wavelength=wavelength)
          refi = self.__getTable__('refimag', bin, wavelength=wavelength)
-         var = (refr.interp(rh=rh), refi.interp(rh=rh))
+         var  = (refr.interp(rh=rh), refi.interp(rh=rh))
 
-      if name == 'aot_ssa_pmom' or name == 'aot_ssa_gasym':
+      elif name == 'aot_ssa_pmom' or name == 'aot_ssa_gasym':
          assert q_mass is not None, name + 'needs q_mass as input'
          bext = self.__getTable__('bext', bin, wavelength=wavelength)
          bsca = self.__getTable__('bsca', bin, wavelength=wavelength)
@@ -128,16 +128,16 @@ class MieTABLE(object):
             pmom = self.__getTable__('pmom', bin, wavelength=wavelength)
             pmom = pmom.interp(rh=rh)
             var  = (aot, ssa, pmom)
-         if 'gasym' in name:
+         elif 'gasym' in name:
             gasym = self.__getTable__('g', bin, wavelength=wavelength)
             gasym = gasym.interp(rh=rh)
             var   = (aot, ssa, gasym)
 
-      if name == 'p11':
+      elif name == 'p11':
          p11 = self.__getTable__('pback', bin, wavelength=wavelength)
          var = p11.isel({"nPol": [0]}).interp(rh=rh).rename('p11')
 
-      if name == 'p22':
+      elif name == 'p22':
          p22 = self.__getTable__('pback', bin, wavelength=wavelength)
          var = p22.isel({"nPol": [4]}).interp(rh=rh).rename('p22')
  
