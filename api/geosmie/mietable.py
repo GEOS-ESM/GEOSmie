@@ -7,9 +7,7 @@
 
 """
 
-import numpy as np
 import xarray as xr
-import pandas as pd
 
 __VERSION__ = '0.9.0'
 
@@ -55,16 +53,23 @@ class MieTABLE(object):
       self.filename    = filename
       self.mieDS       = xr.open_dataset(filename)
       self.vars_list   = self.mieDS.keys()
-    
+      wavelengths      = self.mieDS.coords['lambda'].values
+      radius           = self.mieDS.coords['radius'].values
+      self.min_wavelength = min(wavelengths)
+      self.max_wavelength = max(wavelengths)
+      self.bins           = len(radius)
+
    def __getTable__(self, name, bin, wavelength=None):
       """
         get table directly from file
       """
-      assert name in self.vars_list, name + ' is not found in the table '+ self.filename
+      assert name in self.vars_list, name + ' is not found in the table ' + self.filename
+      assert 1 <= bin and bin <= self.bins,  "bin " + str(bin) + " is out of range in the file " + self.filename
 
       bin_ = bin - 1
       if 'lambda' in self.mieDS[name].dims:
-         assert wavelength is not None, 'wavelength should be provided to get variable ' + name
+         assert wavelength is not None, 'wavelength should be provided to get variable ' + name + ' in file ' + filename
+         wavelength = min(max(wavelength, self.min_wavelength), self.max_wavelength)
          var = self.mieDS[name].isel({'radius':[bin_]}).interp({'lambda': [wavelength]})
       else:
          var = self.mieDS[name].isel({'radius':[bin_]})
