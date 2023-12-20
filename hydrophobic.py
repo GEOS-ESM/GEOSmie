@@ -64,14 +64,14 @@ def doConversion(infn, outfn, pfx):
             if ri == 0: # hydrophobic case
               var[0,rhi] = ncvar[0,0] # set zero RH case 
             else: # regular case
-              var[ri,rhi] = ncvar[0,rhi] # set zero RH case 
+              var[ri,rhi] = ncvar[0,rhi] # set hydrophilic RH case 
       elif len(var.shape) == 3:
         for ri in range(var.shape[0]):
           for rhi in range(var.shape[1]):
             if ri == 0: # hydrophobic case
               var[0,rhi,:] = ncvar[0,0,:] # set zero RH case 
             else: # regular case
-              var[ri,rhi,:] = ncvar[0,rhi,:] # set zero RH case 
+              var[ri,rhi,:] = ncvar[0,rhi,:] # set hydrophilic RH case 
       elif len(var.shape) == 4:
         if var.shape[0] == 6: # this is pback that we have to handle separately
           for ri in range(var.shape[1]):
@@ -79,7 +79,7 @@ def doConversion(infn, outfn, pfx):
               if ri == 0: # hydrophobic case
                 var[:,0,rhi,:] = ncvar[:,0,0,:] # set zero RH case 
               else: # regular case
-                var[:,ri,rhi,:] = ncvar[:,0,rhi,:] # set zero RH case 
+                var[:,ri,rhi,:] = ncvar[:,0,rhi,:] # set hydrophilic RH case 
 
         else: # scattering matrix elements -- should be len 5 with nPol as first index, but is not yet
           for ri in range(var.shape[0]):
@@ -87,7 +87,7 @@ def doConversion(infn, outfn, pfx):
               if ri == 0: # hydrophobic case
                 var[0,rhi,:,:] = ncvar[0,0,:,:] # set zero RH case 
               else: # regular case
-                var[ri,rhi,:,:] = ncvar[0,rhi,:,:] # set zero RH case 
+                var[ri,rhi,:,:] = ncvar[0,rhi,:,:] # set hydrophilic RH case 
       else:
         print("unhandled number of dimensions")
         print(ncvar)
