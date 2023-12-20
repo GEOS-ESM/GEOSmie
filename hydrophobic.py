@@ -1,3 +1,17 @@
+"""
+
+Specialized code that takes output from a calculation done for a
+hydrophilic species and--using key '"hydrophobic:" true' from 
+configuration file creates a new file with an additional index
+in radius dimension, fills variables of hydrophilic dimension
+(the second radius index) with the original file's outputs
+and fills in the hydrophobic dimension (first radius index) with
+RH=0 values of the hydrophilic calculation for all RH indices.
+Returns new file. runoptics.py handles the file moving and
+naming.
+
+"""
+
 import netCDF4
 import os
 
@@ -10,7 +24,7 @@ def doConversion(infn, outfn, pfx):
 
   #First import the netcdf4 library
 
-  # Read en existing NetCDF file and create a new one
+  # Read an existing NetCDF file and create a new one
   # f is going to be the existing NetCDF file from where we want to import data
   # and g is going to be the new file.
   
@@ -85,3 +99,4 @@ def doConversion(infn, outfn, pfx):
 
   f.close()
   g.close()
+
