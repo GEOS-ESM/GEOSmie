@@ -86,6 +86,8 @@ if __name__ == "__main__":
         fn = fn1
 
     # Given configuration file fn, return particle properties defined
+    # Invoked here only to know if special handling for philic/phobic
+    # binned files is needed (see later)
     params = pp.getParticleParams(fn, options.datatype)
 
     # remove path (only use filename) and remove json suffix
