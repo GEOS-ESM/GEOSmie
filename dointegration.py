@@ -7,9 +7,7 @@ import os
 import numba
 import hydrophobic
 import sys
-
 from pymiecoated.mie_coated import MultipleMie
-
 import particleparams as pp
 
 """
@@ -603,9 +601,15 @@ def calculatePSD(params, radind, onerh, rh, xxarr, drarr, rrat, lam):
 
   return psd, rLow, rUp
 
+
+# This is the main integration function called from runoptics.py
+# Inputs are:
+#  partID0:  the particle type JSON file header or filename, e.g., bc, oc, ...
+#  datatype: the type of the file to be parsed, must be JSON presently
+#  oppfx:    the path for the output file
 def fun(partID0, datatype, oppfx):
 
-  # clean up partID
+  # clean up partID, reduce just to particle type (e.g., bc, oc, ...)
   partID = partID0.split('/')[-1].replace(".json", "")
 
   print("\n ####################\n Starting case %s\n ####################\n"%partID)
@@ -615,25 +619,28 @@ def fun(partID0, datatype, oppfx):
     partID2 = partID0.replace('-orig', '')
   else:
     partID2 = partID0
+  # Get the particle properties from the JSON file
   params = pp.getParticleParams(partID2, datatype)
+
+  # Particle shape determines calculation path, either Mie calculations
+  # or using GRASP-like kernel files. Code does not presently include
+  # any alternative internal calculations to Mie.
   mode = 'mie'
   if 'shape' in params:
     mode = params['shape']
-
   if mode == 'spheroid' or mode == 'spheroid_sphere':
     useGrasp = True
   elif mode == 'mie':
     useGrasp = False
     
-
+  # Refractive indices for particles and water
   mList = params['mList']
   waterMList = pp.getWaterM()
 
-
-
+  # List of wavelengths in the particle refractive index table
   allLambda = mList[0][0]
 
-  # interpolation functions for mr, mi
+  # interpolation functions for refractive indices mr, mi
   partMr = [interp1d(mList[i][0], mList[i][1]) for i in range(len(mList))]
   partMi = [interp1d(mList[i][0], mList[i][2]) for i in range(len(mList))]
   waterMr = interp1d(waterMList[0], waterMList[1])
@@ -653,7 +660,9 @@ def fun(partID0, datatype, oppfx):
     radindarr = list(range(len(params['psd']['params']['rMinMaj'])))
     radiusarr = [xx[0] for xx in params['psd']['params']['rMinMaj']]
 
-  lambarr = allLambda # allLambda is read from a refractive index file
+  # Wavelengths to compute on, presently defined by set of wavelengths
+  # defined in the particle refractive index files
+  lambarr = allLambda
 
   rh = params['rh'] 
 
@@ -661,6 +670,7 @@ def fun(partID0, datatype, oppfx):
   Define parameters for netcdf creation
   """
 
+  # Angles phase functions will be written at
   if mode =='mie':
     ang1 = np.linspace(0., 1., 100, endpoint=False)
     ang2 = np.linspace(1., 10., 100, endpoint=False)
@@ -670,8 +680,8 @@ def fun(partID0, datatype, oppfx):
     ang = np.linspace(0., 180., 181)
 
   costarr = np.cos(np.radians(ang))
-  minlam = allLambda[0]
-  maxlam = allLambda[-1]
+  minlam = lambarr[0]
+  maxlam = lambarr[-1]
 
   opncdf = createNCDF(ncdfID, oppfx, radiusarr, rh, lambarr, ang[:])
 
@@ -718,8 +728,8 @@ def fun(partID0, datatype, oppfx):
     """
     TODO!
     parallelization over lambda, i.e. have a single worker evaluate each lambda since they are independent of each other
-
-    therefore, we should move this huge block of code under the loop into a separate function that takes lambda as a parameter along with everything else it needs
+    therefore, we should move this huge block of code under the loop into a separate function that takes lambda as a 
+    parameter along with everything else it needs
     """
 
     iii = 0
