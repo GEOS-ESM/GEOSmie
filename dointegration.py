@@ -414,6 +414,7 @@ def initializeXarr(params, radind, minlam, maxlam):
     # we should also consider max-humidity case for maxx0
 
     # use minx and maxx instead of weird r0 system
+    # PRC: Not sure why OPK made limmaxx0 greater by factor of 3
     limminx0 = pparam['rmin0'][radind][0] * 2 * np.pi / maxlam
     limmaxx0 = pparam['rmax0'][radind][-1] * 2 * np.pi / minlam * 3.0
 
@@ -424,6 +425,8 @@ def initializeXarr(params, radind, minlam, maxlam):
       sys.exit()
 
     xxarr, drarr = getXArrCarma(limminx0, limmaxx0, numperdec)
+    print(drarr,len(xxarr) )
+    sys.exit()
     drarr2 = getDR(xxarr)
     drrat = drarr / drarr2
 
@@ -660,6 +663,7 @@ def fun(partID0, datatype, oppfx):
     radindarr = list(range(len(params['psd']['params']['rMinMaj'])))
     radiusarr = [xx[0] for xx in params['psd']['params']['rMinMaj']]
 
+
   # Wavelengths to compute on, presently defined by set of wavelengths
   # defined in the particle refractive index files
   lambarr = allLambda
@@ -711,6 +715,7 @@ def fun(partID0, datatype, oppfx):
     xxarr = spdata.variables['x'][:]
     drarr = getDR(xxarr) 
 
+  # Loop over the particle size bins/modes
   for radind in radindarr:
     print("=== === === USING RADIND %d"%radind)
 
