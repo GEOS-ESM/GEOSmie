@@ -1,3 +1,17 @@
+#!/usr/bin/env python3
+
+"""
+ Utility to create GEOS/GOCART-compatible aerosol optics look-up tables
+ Top-level caller for optics table generation code
+ Usage example:
+  runoptics.py --name bc.json
+ will produce an output file named "integ-bc-raw.nc"
+
+  runoptics -h
+ will print a usage message
+
+"""
+
 import shutil
 import os
 import dointegration
@@ -59,6 +73,7 @@ if __name__ == "__main__":
   else:
     namelist = [options.name]
 
+  # Loop over namelisted files
   for fni, fn in enumerate(namelist):
     print("Starting particle file %s, %d of %d"%(fn, fni+1, len(namelist)))
     if not os.path.exists(fn):
@@ -70,14 +85,24 @@ if __name__ == "__main__":
       else:
         fn = fn1
 
+    # Given configuration file fn, return particle properties defined
+    # Invoked here only to know if special handling for philic/phobic
+    # binned files is needed (see later)
     params = pp.getParticleParams(fn, options.datatype)
 
     # remove path (only use filename) and remove json suffix
     particlename = fn.split('/')[-1].replace(".json", "")
 
+    # Perform the requested calculation/integrations
     dointegration.fun(fn, options.datatype, options.dest)
 
 
+    # Special handling based on key "hydrophobic" in configuration
+    # This handling implies a full (hydrophilic) calculation at all
+    # RH is done for for one particle bin and the RH=0 (hydrophobic)
+    # values are propagated as an additional bin valid at all RH 
+    # that is prepended to the results of the initial hydrophilic 
+    # calculation
     opfn = "integ-%s-raw.nc"%particlename
     if "hydrophobic" in params and params["hydrophobic"]:
       # rename non-HP file 
