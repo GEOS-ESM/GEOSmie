@@ -96,7 +96,6 @@ if __name__ == "__main__":
     # Perform the requested calculation/integrations
     dointegration.fun(fn, options.datatype, options.dest)
 
-
     # Special handling based on key "hydrophobic" in configuration
     # This handling implies a full (hydrophilic) calculation at all
     # RH is done for for one particle bin and the RH=0 (hydrophobic)

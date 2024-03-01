@@ -205,20 +205,18 @@ def find_closest_ind(myList, myNumber, typ='none',ide=''):
 def createNCDF(ncdfID, oppfx, rarr, rharr, lambarr, ang):
   ncdf = netCDF4.Dataset(os.path.join(oppfx, 'integ-%s.nc'%ncdfID), 'w')
 
-  idR= ncdf.createDimension('radius', len(rarr))
-  idRh = ncdf.createDimension('rh', len(rharr))
-  idLambda = ncdf.createDimension('lambda', len(lambarr))
-  idAng = ncdf.createDimension('ang', len(ang))
-  idNpol = ncdf.createDimension('nPol', 6)
-
-  usezlib = False # no compression
+  idRh     = ncdf.createDimension('rh', len(rharr))
+  idLambda = ncdf.createDimension('wavelength', len(lambarr))
+  idBin    = ncdf.createDimension('bin', len(rarr))
+  idNpol   = ncdf.createDimension('p', 6)
+  idAng    = ncdf.createDimension('ang', len(ang))
 
   vardict = {} # holds all the variable metadata
-  vardict['radius'] = {'units': 'dimensionless', \
+  vardict['bin'] = {'units': 'dimensionless', \
   'long_name': 'radius bin index (1-indexed)'
   }
 
-  vardict['nPol'] = {'units': 'dimensionless', \
+  vardict['p'] = {'units': 'dimensionless', \
   'long_name': 'Scattering matrix element index, ordered as P11, P12, P33, P34, P22, P44' 
   }
 
@@ -226,7 +224,7 @@ def createNCDF(ncdfID, oppfx, rarr, rharr, lambarr, ang):
   'long_name': 'relative humidity' 
   }
    
-  vardict['lambda'] = {'units': 'm', \
+  vardict['wavelength'] = {'units': 'm', \
   'long_name': 'wavelength' 
   }
 
@@ -326,14 +324,14 @@ def createNCDF(ncdfID, oppfx, rarr, rharr, lambarr, ang):
   'long_name': 'imaginary refractive index of wet particle'
   }
 
-  idR = ncdf.createVariable('radius', 'f8', ('radius'), zlib=usezlib)
-  idRH = ncdf.createVariable('rh', 'f8', ('rh'), zlib=usezlib)
-  idLambda = ncdf.createVariable('lambda', 'f8', ('lambda'), zlib=usezlib)
-  idAng = ncdf.createVariable('ang', 'f8', ('ang'), zlib=usezlib)
-  idNpol = ncdf.createVariable('nPol', 'f8', ('nPol'), zlib=usezlib)
+  idRH     = ncdf.createVariable('rh', 'f8', ('rh'), compression='zlib')
+  idLambda = ncdf.createVariable('wavelength', 'f8', ('wavelength'), compression='zlib')
+  idR      = ncdf.createVariable('bin', 'i8', ('bin'), compression='zlib')
+  idNpol   = ncdf.createVariable('p', 'i8', ('p'), compression='zlib')
+  idAng    = ncdf.createVariable('ang', 'f8', ('ang'), compression='zlib')
 
   # use list for easier looping
-  dimvars = ['radius', 'rh', 'lambda', 'ang', 'nPol']
+  dimvars = ['bin', 'rh', 'wavelength', 'ang', 'p']
   for var in dimvars:
     ncdf.variables[var].long_name = vardict[var]['long_name']
     ncdf.variables[var].units = vardict[var]['units']
@@ -343,14 +341,14 @@ def createNCDF(ncdfID, oppfx, rarr, rharr, lambarr, ang):
   idRH[:] = rharr
   idLambda[:] = lambarr
   idAng[:] = ang
-  idNpol[:] = range(len(idNpol[:]))
+  idNpol[:] = [11,12,33,34,22,44]
 
   ncdfDimensionTypes = {\
-  "scalarScattering": ("radius", "rh", "lambda"),\
-  "noLambdaScalarScattering": ("radius", "rh"),\
-  "scatteringFun": ("radius", "rh", "lambda", "ang"),\
-  "elementScattering": ("nPol", "radius", "rh", "lambda"),\
-  "scalarVals": ("radius"),\
+                        "scalarScattering": ("bin", "wavelength", "rh"),\
+  "noLambdaScalarScattering": ("bin", "rh"),\
+  "scatteringFun": ("bin", "wavelength", "rh", "ang"),\
+  "elementScattering": ("bin", "wavelength", "rh", "p"),\
+  "scalarVals": ("bin"),\
   }
 
   # for each NetCDF variable, assign one dimension type based on the dimension types dictionary
@@ -398,7 +396,7 @@ def createNCDF(ncdfID, oppfx, rarr, rharr, lambarr, ang):
   # create NetCDF variables 
   # TODO define the variable types somewhere instead of using f8 for all
   for ncdfKey in list(ncdfVariableDimensionTypes.keys()):
-    ncdfVars[ncdfKey] = ncdf.createVariable(ncdfKey, 'f8', ncdfVarDims[ncdfKey], zlib=usezlib)
+    ncdfVars[ncdfKey] = ncdf.createVariable(ncdfKey, 'f8', ncdfVarDims[ncdfKey], compression='zlib')
     ncdf.variables[ncdfKey].long_name = vardict[ncdfKey]['long_name']
     ncdf.variables[ncdfKey].units = vardict[ncdfKey]['units']
 
@@ -900,11 +898,11 @@ def fun(partID0, datatype, oppfx):
         for key in allkeys: # we can also save to allvals and write later
           if key in scatkeys:
             iii += 1
-            opncdf.variables[key][radind, rhi, li, :] = ret[key][:]
+            opncdf.variables[key][radind, li, rhi, :] = ret[key][:]
           elif key in elekeys:
-            opncdf.variables[key][:, radind, rhi, li] = ret[key][:]
+            opncdf.variables[key][radind, li, rhi, :] = ret[key][:]
           elif key in scalarkeys + extrakeys:
-            opncdf.variables[key][radind, rhi, li] = ret[key]
+            opncdf.variables[key][radind, li, rhi] = ret[key]
           elif key in nlscalarkeys:
             opncdf.variables[key][radind, rhi] = ret[key]
           else:
