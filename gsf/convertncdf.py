@@ -68,9 +68,8 @@ elts of the scattering law matrix for a Fourier decomposition of the phase matri
   ncdf.variables['phase_matrix'].long_name = 'Phase matrix elements, ordered over nPol as P11, P12, P33, P34, P22, P44'
 
 def createVariablesPyGeosMie(ncdf, numExpand):
-  #ncdf.createVariable('pmom', 'f8', (keydic['nPol'], keydic['nMom'], keydic['nradius'], 'rh', keydic['nlambda']))
-  ncdf.createDimension('nMom', numExpand)
-  ncdf.createVariable('pmom', 'f8', ('nPol', 'nMom', 'radius', 'rh', 'lambda')) # we copy the original moments here
+  ncdf.createDimension('nmom', numExpand)
+  ncdf.createVariable('pmom', 'f8', ('bin','wavelength','rh','p','nmom'), compression='zlib') # we copy the original moments here
   ncdf.variables['pmom'].long_name =\
 'Moments of the generalized spherical functions order over nPol as the 11, 12, 33, 34, 22, 44 \
 elements of the scattering law matrix for a Fourier decomposition of the phase matrix such as those used in discrete ordinate solutions to the RTE'
@@ -174,14 +173,13 @@ def convertData(ncdf, mode, ice, whichproc, radind, rhi, lami, rhop0, num_gauss,
     keys = ['s11', 's22', 's33', 's44', 's12', 's34'] # order Mischenko's code expects
     allvals[0,:] = ang
     for ki, key in enumerate(keys):
-      allvals[ki+1, :] = ncdf.variables[key][radind, rhi, lami, :]
+      allvals[ki+1, :] = ncdf.variables[key][radind, lami, rhi, :]
 
     # write the temp file
     tempfn = 'tempfile%d.txt'%whichproc
     np.savetxt(tempfn, allvals.T)
     os.system('./a.out %s > /dev/null'%tempfn)
     newdata = np.loadtxt('%s.expan_coeff'%tempfn, skiprows=1, unpack=True)
-  
   elif mode == 'legendre':
     gpoints, gweights = leggauss(num_gauss)
     gpoints = gpoints[::-1]
@@ -255,7 +253,7 @@ def convertData(ncdf, mode, ice, whichproc, radind, rhi, lami, rhop0, num_gauss,
     Calculate pback
     """
     for ii, npol in enumerate([0,4,2,5,1,3]):
-      ncdf.variables['pback'][radind, rhi, lami, npol] = allvals[ii+1][-1] # this should be the backscattering angle
+      ncdf.variables['pback'][radind, lami, rhi, npol] = allvals[ii+1][-1] # this should be the backscattering angle
 
     """
     Calculate bbck etc
@@ -263,14 +261,14 @@ def convertData(ncdf, mode, ice, whichproc, radind, rhi, lami, rhop0, num_gauss,
 
     convfact = 1. / (rhop0[radind] * 1e-6)
     foo1 = ncdf.variables['bsca_vol'][radind,:]
-    ncdf.variables['bsca'][radind,rhi,lami] = ncdf.variables['bsca_vol'][radind,lami] * convfact
-    ncdf.variables['bext'][radind,rhi,lami] = ncdf.variables['bext_vol'][radind,lami] * convfact
-    ncdf.variables['qsca'][radind,rhi,lami] = ncdf.variables['bsca_vol'][radind,lami] * 4./3. * ncdf.variables['rEff'][radind]
-    ncdf.variables['qext'][radind,rhi,lami] = ncdf.variables['bext_vol'][radind,lami] * 4./3. * ncdf.variables['rEff'][radind]
+    ncdf.variables['bsca'][radind,lami,rhi] = ncdf.variables['bsca_vol'][radind,lami] * convfact
+    ncdf.variables['bext'][radind,lami,rhi] = ncdf.variables['bext_vol'][radind,lami] * convfact
+    ncdf.variables['qsca'][radind,lami,rhi] = ncdf.variables['bsca_vol'][radind,lami] * 4./3. * ncdf.variables['rEff'][radind]
+    ncdf.variables['qext'][radind,lami,rhi] = ncdf.variables['bext_vol'][radind,lami] * 4./3. * ncdf.variables['rEff'][radind]
     pBck = ncdf.variables['p11'][radind,lami,-1] # p11 at backscatter direction
-    qBck = pBck * ncdf.variables['qsca'][radind,rhi,lami] / (4*np.pi)
+    qBck = pBck * ncdf.variables['qsca'][radind,lami,rhi] / (4*np.pi)
     bBck = 3./4.*qBck / rhop0[radind] / ncdf.variables['rEff'][radind]
-    ncdf.variables['bbck'][radind,rhi,lami] = bBck * 1e6
+    ncdf.variables['bbck'][radind,lami,rhi] = bBck * 1e6
 
     """
     Calculate g
@@ -281,7 +279,7 @@ def convertData(ncdf, mode, ice, whichproc, radind, rhi, lami, rhop0, num_gauss,
     p11n = p11 / np.sum(p11 * np.sin(angs))
     g = np.sum(np.cos(angs) * np.sin(angs) * p11n)
 
-    ncdf.variables['g'][radind, rhi, lami] = g
+    ncdf.variables['g'][radind, lami, rhi] = g
 
     # write the temp file
     tempfn = 'tempfile%d.txt'%whichproc
@@ -344,20 +342,19 @@ def processFileRaw(infile, outdir, whichproc, rhop0, mode, ice):
     keydic = {'nradius': 'nreff', 'nPol': 'nphamat', 'nlambda': 'nlam', 'nMom': 'nmommax', 'lambda': 'wavelen', 'radius': 'reff'}
   elif (mode == 'pygeos'):
     createVariablesPyGeosMie(ncdf, numExpand)
-    keydic = {'nradius': 'radius', 'nPol': 'nPol', 'nlambda': 'lambda', 'nMom': 'nMom', 'lambda': 'lambda', 'radius': 'radius'}
+    keydic = {'wavelength': 'wavelength', 'bin': 'bin'}
   else: # grasp
     createVariablesGRASP(ncdf, numExpand)
     keydic = {'rv': 'rv', 'nPol': 'nPol', 'lambda': 'lambda', 'radius': 'sizeBin'}
 
-  alllambda = ncdf.variables[keydic['lambda']]
+  alllambda = ncdf.variables[keydic['wavelength']]
 
   print(ncdf.variables.keys())
-
   for lami, lam in enumerate(alllambda):
     if lami % 10 == 0:
       print("lami %d of %d"%(lami+1, len(alllambda)))
     for rhi, rh in enumerate(ncdf.variables['rh']):
-      for radind, radius in enumerate(ncdf.variables[keydic['radius']]):
+      for radind, radius in enumerate(ncdf.variables[keydic['bin']]):
         newdata, linvals = convertData(ncdf, mode, ice, whichproc, radind, rhi, lami, rhop0, num_gauss, linangs)
             
         """
@@ -365,15 +362,15 @@ def processFileRaw(infile, outdir, whichproc, rhop0, mode, ice):
         """
         for ii, npol in enumerate([0,4,2,5,1,3]):
           if mode == 'legendre':
-            ncdf.variables['pmom2'][npol, :, radind, rhi, lami] = ncdf.variables['pmom'][npol, :, radind, rhi, lami]
+            ncdf.variables['pmom2'][radind, lami, rhi, npol, :] = ncdf.variables['pmom'][radind, lami, rhi, npol, :]
           pmomdata = newdata[1+ii]
-          lenpmom = len(ncdf.variables['pmom'][npol, :, radind, rhi, lami])
+          lenpmom = len(ncdf.variables['pmom'][radind, lami, rhi, npol, :])
           pmomdata2 = np.zeros(lenpmom)
           pmomdata2[:len(pmomdata)] = pmomdata # zero-padded array
             
-          ncdf.variables['pmom'][npol, :, radind, rhi, lami] = pmomdata2
+          ncdf.variables['pmom'][radind, lami, rhi, npol, :] = pmomdata2
           if mode == 'legendre':
-            ncdf.variables['phase_matrix'][npol, :, radind, rhi, lami] = linvals[1+ii]
+            ncdf.variables['phase_matrix'][radind, lami, rhi, npol, :] = linvals[1+ii]
             angs = ncdf.variables['scattering_angle']
 
     if lami + 1 == len(alllambda):
