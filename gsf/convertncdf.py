@@ -68,8 +68,8 @@ elts of the scattering law matrix for a Fourier decomposition of the phase matri
   ncdf.variables['phase_matrix'].long_name = 'Phase matrix elements, ordered over nPol as P11, P12, P33, P34, P22, P44'
 
 def createVariablesPyGeosMie(ncdf, numExpand):
-  ncdf.createDimension('nmom', numExpand)
-  ncdf.createVariable('pmom', 'f8', ('bin','wavelength','rh','p','nmom'), compression='zlib') # we copy the original moments here
+  ncdf.createDimension('m', numExpand)
+  ncdf.createVariable('pmom', 'f8', ('bin','wavelength','rh','p','m'), compression='zlib') # we copy the original moments here
   ncdf.variables['pmom'].long_name =\
 'Moments of the generalized spherical functions order over nPol as the 11, 12, 33, 34, 22, 44 \
 elements of the scattering law matrix for a Fourier decomposition of the phase matrix such as those used in discrete ordinate solutions to the RTE'
