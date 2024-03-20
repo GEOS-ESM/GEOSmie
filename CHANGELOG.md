@@ -17,6 +17,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Deprecated
 
+## [1.0.1] - 2024-03-20
+
+### Changed
+
+- All driver files (runoptics, runbands, rungsf) are now "executable"
+  from cmd line
+- Added some comments to code
+- Reordered and renamed dimensions per discussion with modeling group
+
+### Fixed
+
+- There were some errors in initial implementation of code to do with
+  normalization of hydrated properties that were fixed.
+
 ## [1.0.0] - 2022-09-28
 
 ### Added
