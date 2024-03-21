@@ -16,7 +16,8 @@ import particleparams as pp
 These govern how integration and dimensions etc are done, so define them here
 """
 scatkeys = ['s11', 's12', 's22', 's33', 's34', 's44']
-scalarkeys = ['qext', 'qsca', 'qabs', 'g', 'qb', 'csca', 'cext']
+#scalarkeys = ['qext', 'qsca', 'qabs', 'g', 'qb', 'csca', 'cext']
+scalarkeys = ['qext', 'qsca', 'qabs', 'qb', 'g', 'csca', 'cext']
 extrakeys = ['ssa', 'bsca', 'bext', 'bbck', 'refreal', 'refimag', 'lidar_ratio']
 elekeys = ['pback']
 nlscalarkeys = ['mass', 'volume', 'area', 'rEff', 'rMass', 'rhop', 'growth_factor', 'rLow', 'rUp']
@@ -510,6 +511,7 @@ def calculatePSD(params, radind, onerh, rh, xxarr, drarr, rrat, lam):
     rMinUse = rmins[0]
     rMaxUse = rmaxs[0]
     rLow = rmins[0]
+#    rUp = rmaxs[0]
     rUp = rmaxs0[0]
 
     # no humidity growth for sigma
@@ -517,6 +519,7 @@ def calculatePSD(params, radind, onerh, rh, xxarr, drarr, rrat, lam):
 
     fracs = pparam['fracs']
     psd = []
+    ref = []
     for psdi in range(len(rmodes)):
       thispsd = pp.getLogNormPSD(xxarr, rmodes[psdi], rmaxs[psdi], rmins[psdi], sigmas[psdi], lam)
       psdbins = drarr
@@ -528,6 +531,10 @@ def calculatePSD(params, radind, onerh, rh, xxarr, drarr, rrat, lam):
       thispsd /= np.sum(thispsd)
 
       psd.append(thispsd)
+
+      rrarr = xxarr * lam / 2. / np.pi
+      thisref = np.sum(rrarr**4. * thispsd) / np.sum(rrarr**3. * thispsd)
+      ref.append(thisref)
 
   elif psdtype == 'ss':
     rMinMaj = pparam['rMinMaj'][radind] 
@@ -568,6 +575,8 @@ def calculatePSD(params, radind, onerh, rh, xxarr, drarr, rrat, lam):
     psd /= np.sum(psd) 
     psd = [psd] # force into array to match multimodal PSD system
 
+    ref = [np.sum((xxarr * lam / 2. / np.pi)**4 * psd) / np.sum((xxarr * lam / 2. / np.pi)**3 * psd)]
+
   elif psdtype == 'du':
     """
     Weight these so that the distribution across the major bin respects
@@ -578,6 +587,7 @@ def calculatePSD(params, radind, onerh, rh, xxarr, drarr, rrat, lam):
      into the class 6 - 10 micron bin
     """
     psd = []
+    ref = []
     numminor = len(pparam['rMinMaj'][radind])
     for rMinorInd in range(numminor):
       rMinMaj = pparam['rMinMaj'][radind][rMinorInd] 
@@ -601,7 +611,11 @@ def calculatePSD(params, radind, onerh, rh, xxarr, drarr, rrat, lam):
       thispsd /= np.sum(thispsd) 
       psd.append(thispsd)
 
-  return psd, rLow, rUp
+      rrarr = xxarr * lam / 2. / np.pi
+      thisref = np.sum(rrarr**4. * thispsd) / np.sum(rrarr**3. * thispsd)
+      ref.append(thisref)
+
+  return psd, ref, rLow, rUp
 
 def fun(partID0, datatype, oppfx):
 
@@ -746,6 +760,12 @@ def fun(partID0, datatype, oppfx):
         rh = np.array(rh)
         rh[capind] = maxrh
 
+      """
+      Get Dry Particle Properties
+      """
+      mr0, mi0, gf, rrat0 = getHumidRefractiveIndex(params, radind, 0, rh, nref0, nrefwater)
+      psd0, reff_mass0, rLow0, rUp0 = calculatePSD(params, radind, 0., rh, xxarr, drarr, rrat0, lam)
+
 
       """
       Start RH loop
@@ -760,7 +780,7 @@ def fun(partID0, datatype, oppfx):
 
         mr, mi, gf, rrat = getHumidRefractiveIndex(params, radind, rhi, rh, nref0, nrefwater)
 
-        psd, rLow, rUp = calculatePSD(params, radind, onerh, rh, xxarr, drarr, rrat, lam)
+        psd, ref, rLow, rUp = calculatePSD(params, radind, onerh, rh, xxarr, drarr, rrat, lam)
 
         """
         ***********
@@ -791,7 +811,7 @@ def fun(partID0, datatype, oppfx):
             allret = [allret[0] for i in range(len(psd))] # multibin
 
           # separate integration step
-          ret = integratePSD(multipleMie.xArr, allret, psd, pparam['fracs'][radind], lam, rhop0, rhop)
+          ret = integratePSD(multipleMie.xArr, allret, psd, pparam['fracs'][radind], lam, reff_mass0, rhop0, rhop)
 
         elif useGrasp:
           ret0 = globalSpheroid
@@ -829,11 +849,12 @@ def fun(partID0, datatype, oppfx):
             usefracs = pparam['fracs'][0]
           else:
             usefracs = pparam['fracs'][radind]
-          ret = integratePSD(xxarr, ret1, psd, usefracs, lam, rhop0, rhop)
+          ret = integratePSD(xxarr, ret1, psd, usefracs, lam, reff_mass0, rhop0, rhop)
 
         qsca = np.array(ret['qsca'])
         qext = np.array(ret['qext'])
         qb = np.array(ret['qb'])
+        g  = np.array(ret['g'])
 
         """
         Calculate extra post-integration variables
@@ -860,6 +881,10 @@ def fun(partID0, datatype, oppfx):
         # mr and mi are arrays since we might have multimodal PSD with different components as modes
         ret['refreal'] = mr[0]
         ret['refimag'] = -np.abs(mi[0]) # force negative to be consistent with Pete's tables
+
+        pback = np.array(ret['pback'])
+#        print(rh[rhi],mr, mi, qext, qsca, g, qb*np.pi)
+#        print(rh[rhi],ref,rLow, rUp)
 
         for key in allkeys: # we can also save to allvals and write later
           if key in scatkeys:
@@ -906,7 +931,7 @@ def readSpheroid(fn):
 For multimodal PSD both rawret as well as psd are lists, so in the integration phase
 we iterate over them
 """
-def integratePSD(xxarr, rawret, psd, fracs, lam, rhop0, rhop):
+def integratePSD(xxarr, rawret, psd, fracs, lam, reff0, rhop0, rhop):
   ret = {}
   rrarr = xxarr * lam / (2. * np.pi)
 
@@ -942,6 +967,7 @@ def integratePSD(xxarr, rawret, psd, fracs, lam, rhop0, rhop):
       thisret[key] = np.zeros_like(ret[key])
 
     drdndr = psd[fraci]
+    reff_mass0 = reff0[fraci]
 
     num = np.sum(drdndr)
     rarr2 = rrarr ** 2. * drdndr
@@ -965,11 +991,35 @@ def integratePSD(xxarr, rawret, psd, fracs, lam, rhop0, rhop):
 
     reff_mass = np.sum(rarr4) / np.sum(rarr3)
     thisret['rMass'] = 4. / 3. * np.pi * rhop * reff_mass ** 3.
-    rMass0 = 4. / 3. * np.pi * rhop0 * reff_mass ** 3
+    rMass0 = 4. / 3. * np.pi * rhop0 * reff_mass0 ** 3
 
     for key in retkeys:
-      qscawe = ['g']
 
+#     PRC: qb returned from the mie call is the backscatter efficiency 
+#     (to a factor of 2) consistent with what gets calculated from MIEV
+#     but Osku's original integration is inconsistent (and wrong?) with
+#     my IDL code. Since qb = p11*qsca/(4pi) I'm right here backing out
+#     P11 at each subbin, which I will integrate separately
+      qbwght = ['qb']
+      if key in qbwght:
+        thisq    = np.array(rawret[fraci]['qsca'])
+        beta     = np.sum(thisq*rarr2)*np.pi
+        k        = 2.*np.pi/lam
+        k2       = k*k
+        fac      = 4.*np.pi/(2.*k2*beta)
+        fac      = 1./beta
+        thisqb   = np.array(rawret[fraci][key])
+#        thisp11  = thisqb/(thisq)#*(4.*np.pi)
+#        thisp11  = thisqb*thisarea/np.pi
+        thisp11  = thisqb*thisarea*(4.*np.pi)
+        p11back  = np.dot(thisp11.T,psd[fraci])*fac#/np.sum(rarr2)
+#        print(p11back,beta,np.sum(psd[fraci])*fac)
+#        print(thisq)
+#        print(rrarr*1e6)
+#        print(thisp11)
+#        exit()
+
+      qscawe = ['g']
       if key in qscawe:
         thisweight *= rawret[fraci]['qsca'] # scale also by qext
 
@@ -979,6 +1029,10 @@ def integratePSD(xxarr, rawret, psd, fracs, lam, rhop0, rhop):
       if key in scatkeys:
         thisvals = rawret[fraci][key]
         thisret[key] = np.dot(thisvals.T, psd[fraci]) # integrate
+      elif key in qbwght:
+        thisret[key] = p11back*thisret['qsca']/(4.*np.pi)
+#        print(thisret[key])
+#        exit()
       else:
         """
         For external mixing we first need to integrate over the individual PSD, 
@@ -1000,6 +1054,7 @@ def integratePSD(xxarr, rawret, psd, fracs, lam, rhop0, rhop):
         elif mixing == 'dumix':
           thisint = np.dot(thisvals, psd[fraci] * thisweight)
           thisret[key] = thisint / sumarea
+#          print(key, np.sum(psd[fraci] * thisweight), sumarea, thisret[key])
 
     # calculate mass efficiencies here
     massConversion = 1. / rhop / thisret['rEff'] * thisret['rMass'] / rMass0
