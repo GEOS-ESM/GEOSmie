@@ -7,6 +7,7 @@ Table of Contents
       * [Calculations at individual wavelengths](#calculations-at-individual-wavelengths)
       * [Calculations over wavelength bands](#calculations-over-wavelength-bands)
    * [GSF expansion code](#gsf-expansion-code)
+   * [Kernel conversion code](#kernel-conversion-code)
 
 <!-- Created by https://github.com/ekalinin/github-markdown-toc -->
 
@@ -107,3 +108,15 @@ For additional options, see
 ```bash
 python rungsf.py --help
 ```
+
+## Kernel conversion code
+
+External kernels (e.g. GRASP spheroids) have to be converted into a specific NetCDF format before GEOSmie can use them. For details on the format, see the full documentation.
+
+A tool is provided for converting kernels from GRASP-like format to the GEOSmie-compatible NetCDF file.
+
+```bash
+python runkernelconversion.py --filename data/kernelconversion/filename.json --dest /path/to/output/directory
+```
+
+where filename.json is a parameter file that specifies various aspects on how the kernels should be read, and has to be updated if the incoming kernel format changes in virtually any way. Sample JSON files are provided for GRASP kernels (grasp.json) and GRASP-like Saito et al. kernels (saito.json).
