@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import numpy as np
 import netCDF4 as nc
 import os
@@ -173,8 +175,6 @@ def fun(data, part, opfn, mode, useSolar, noIR):
   # so then the bands will be [band1, (band0+band2)/2, band3, band4, ...)
   # I have no clue why this is done...better check with Pete
   if mode == 'GEOS5':
-    bw1 = lBandUp[0] - lBandLow[0]
-    bw2 = lBandUp[2] - lBandLow[2]
     for key, val in output.items():
       # this weighing needs to be done in wavelength space
       bw1 = lBandUp[0] - lBandLow[0]
@@ -225,12 +225,12 @@ def fun(data, part, opfn, mode, useSolar, noIR):
     lBandLow = lBandLow0
   lBandLow = lBandLow * 1e6
   lBandUp = lBandUp * 1e6
-  opncdf.createVariable('bandLow', 'f8', ('lambda'))
+  opncdf.createVariable('bandLow', 'f8', ('wavelength'))
   opncdf.variables['bandLow'][:] = lBandLow
   opncdf.variables['bandLow'].long_name = 'Lower edges of the bands'
   opncdf.variables['bandLow'].units = 'micrometers'
 
-  opncdf.createVariable('bandUp', 'f8', ('lambda'))
+  opncdf.createVariable('bandUp', 'f8', ('wavelength'))
   opncdf.variables['bandUp'][:] = lBandLow
   opncdf.variables['bandUp'].long_name = 'Upper edges of the bands'
   opncdf.variables['bandUp'].units = 'micrometers'
