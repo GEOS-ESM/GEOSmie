@@ -17,6 +17,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Deprecated
 
+## [1.0.1] = 2024-03-21
+
+### Fixed
+
+- Bug fix on integration of backscatter efficiency calculation
+  to be consistent with IDL code
+- Bug fix on dry mass calculation
+
 ## [1.0.0] - 2022-09-28
 
 ### Added
