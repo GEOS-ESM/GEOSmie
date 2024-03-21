@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import shutil
 import os
 from optparse import OptionParser

@@ -1,3 +1,17 @@
+"""
+
+Specialized code that takes output from a calculation done for a
+hydrophilic species and--using key '"hydrophobic:" true' from 
+configuration file creates a new file with an additional index
+in radius dimension, fills variables of hydrophilic dimension
+(the second radius index) with the original file's outputs
+and fills in the hydrophobic dimension (first radius index) with
+RH=0 values of the hydrophilic calculation for all RH indices.
+Returns new file. runoptics.py handles the file moving and
+naming.
+
+"""
+
 import netCDF4
 import os
 
@@ -10,7 +24,7 @@ def doConversion(infn, outfn, pfx):
 
   #First import the netcdf4 library
 
-  # Read en existing NetCDF file and create a new one
+  # Read an existing NetCDF file and create a new one
   # f is going to be the existing NetCDF file from where we want to import data
   # and g is going to be the new file.
   
@@ -21,7 +35,7 @@ def doConversion(infn, outfn, pfx):
   
   # To copy the dimension of the netCDF file
 
-  dimsizes = {'radius': 2}
+  dimsizes = {'bin': 2}
   
   for dimname,dim in list(f.dimensions.items()):
     # if you want to make changes in the dimensions of the new file
@@ -35,7 +49,7 @@ def doConversion(infn, outfn, pfx):
   for varname,ncvar in list(f.variables.items()):
     # if you want to make changes in the variables of the new file
     # you should add your own conditions here before the creation of the variable.
-    var = g.createVariable(varname,ncvar.dtype,ncvar.dimensions)
+    var = g.createVariable(varname,ncvar.dtype,ncvar.dimensions,compression='zlib')
     #Proceed to copy the variable attributes
     for attname in ncvar.ncattrs():
        setattr(var,attname,getattr(ncvar,attname))
@@ -50,30 +64,21 @@ def doConversion(infn, outfn, pfx):
             if ri == 0: # hydrophobic case
               var[0,rhi] = ncvar[0,0] # set zero RH case 
             else: # regular case
-              var[ri,rhi] = ncvar[0,rhi] # set zero RH case 
+              var[ri,rhi] = ncvar[0,rhi] # set hydrophilic RH case 
       elif len(var.shape) == 3:
         for ri in range(var.shape[0]):
-          for rhi in range(var.shape[1]):
+          for rhi in range(var.shape[2]):
             if ri == 0: # hydrophobic case
-              var[0,rhi,:] = ncvar[0,0,:] # set zero RH case 
+              var[0,:,rhi] = ncvar[0,:,0] # set zero RH case 
             else: # regular case
-              var[ri,rhi,:] = ncvar[0,rhi,:] # set zero RH case 
+              var[ri,:,rhi] = ncvar[0,:,rhi] # set hydrophilic RH case 
       elif len(var.shape) == 4:
-        if var.shape[0] == 6: # this is pback that we have to handle separately
-          for ri in range(var.shape[1]):
-            for rhi in range(var.shape[2]):
-              if ri == 0: # hydrophobic case
-                var[:,0,rhi,:] = ncvar[:,0,0,:] # set zero RH case 
-              else: # regular case
-                var[:,ri,rhi,:] = ncvar[:,0,rhi,:] # set zero RH case 
-
-        else: # scattering matrix elements -- should be len 5 with nPol as first index, but is not yet
-          for ri in range(var.shape[0]):
-            for rhi in range(var.shape[1]):
-              if ri == 0: # hydrophobic case
-                var[0,rhi,:,:] = ncvar[0,0,:,:] # set zero RH case 
-              else: # regular case
-                var[ri,rhi,:,:] = ncvar[0,rhi,:,:] # set zero RH case 
+        for ri in range(var.shape[0]):
+          for rhi in range(var.shape[2]):
+            if ri == 0: # hydrophobic case
+              var[0,:,rhi,:] = ncvar[0,:,0,:] # set zero RH case 
+            else: # regular case
+              var[ri,:,rhi,:] = ncvar[0,:,rhi,:] # set hydrophilic RH case 
       else:
         print("unhandled number of dimensions")
         print(ncvar)
