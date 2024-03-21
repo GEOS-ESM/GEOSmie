@@ -1,8 +1,19 @@
+"""
+ Utility functions that return particle property definitions
+ defined in the JSON configuration file in a simple data
+ structure. Included are simple functions to read wavelength
+ dependent refractive index tables, compute humidified 
+ particle sizes, and compute simple size distribution
+ functions (e.g., lognormal, could consider adding gamma
+ function as a possible add on.
+"""
+
 import numpy as np
 import os
 import json
 import sys
 
+# Load and return data structure with contents of input JSON file
 def getPPJSON(partid):
   with open("%s"%partid) as fp:
     data = json.load(fp)
@@ -43,6 +54,7 @@ def getPPJSON(partid):
 
   return data
 
+# Top level call, currently only works for JSON format files
 def getParticleParams(partID, datatype):
   if datatype == 'json':
     return getPPJSON(partID)
@@ -50,27 +62,33 @@ def getParticleParams(partID, datatype):
     print("bad datatype: %s"%datatype)
     sys.exit()
 
+# Specialized function to read OPAC provided table of refractive indices
 def getM(fn):
   data = np.loadtxt(fn, skiprows=17, max_rows=61,comments=None,unpack=True, usecols=[1,8,9])
-  data[0] *= 1e-6 # convert to meter units
+  data[0] *= 1e-6 # convert wavelength to meter units
   return data
 
+# Specialized function to read CSV or WSV files of format "wavelength[um],refreal,refimag"
 def getMSep(fn, sep):
   data = np.loadtxt(fn, unpack=True, delimiter=sep)
-  data[0] *= 1e-6 # convert to meter units
+  data[0] *= 1e-6 # convert wavelength to meter units
   return data
 
+# Specialized function to read the HITRAN provided table of water refractive indices
 def getWaterM():
   data = np.loadtxt('data/refrac.water.txt', skiprows=13, unpack=True, usecols=[0,1,2])
-  data[0] *= 1e-6 # convert to meter units
+  data[0] *= 1e-6 # convert wavelength to meter units
   return data
 
+# Function to calculate the humidified size of particles
 def humidityGrowth(params, siz0, rh, allrh): # assume all different sizes grow identically, not sure if that's true...
   rhi = list(allrh).index(rh)
   rhtype = params['type'] 
   rhp = params['params']
+  # Simple growth factor specified
   if rhtype == 'simple' or rhtype == 'trivial':
     return siz0 * rhp['gf'][rhi]
+  # Growth calculated after Gerber [1985]
   elif rhtype == 'ss':
      siz = siz0 * 100 # convert to cm
      if rh == 0.0:
@@ -82,6 +100,7 @@ def humidityGrowth(params, siz0, rh, allrh): # assume all different sizes grow i
        c4 = rhp['c4']
        return (c1 * siz ** c2 / (c3 * siz ** c4 - np.log10(rh)) + siz ** 3.) ** (1./3.) / 100.
 
+# Function to return a lognormal distribution in terms of size parameter and parameters
 def getLogNormPSD(xxArr, rmode, rmax, rmin, sigma, lambd):
   xconv = 2 * np.pi / lambd
   # get distribution variables in x space
