@@ -19,6 +19,6 @@
 "mode": "kernel",
 "kernel_params": {
   "path": "/path/to/kernel",
-  "shape_dist": "data/kernel_shape_dist/spheroid_fixed.txt"
+  "shape_dist": "data/kernel_shape_dist/spheroid_sphere.txt"
   }
 }
