@@ -445,11 +445,11 @@ def initializeXarr(params, radind, minlam, maxlam):
 def copyDryValues(opncdf, allkeys, scatkeys, elekeys, extrakeys, nlscalarkeys, radind, rhi, li):
   for key in allkeys: 
     if key in scatkeys:
-      opncdf.variables[key][radind, rhi, li, :] = opncdf.variables[key][radind, 0, li, :]
+      opncdf.variables[key][radind, li, rhi, :] = opncdf.variables[key][radind, li, 0, :]
     elif key in elekeys:
-      opncdf.variables[key][:, radind, rhi, li] = opncdf.variables[key][:, radind, 0, li]
+      opncdf.variables[key][radind, li, rhi, :] = opncdf.variables[key][radind, li, 0, :]
     elif key in scalarkeys + extrakeys:
-      opncdf.variables[key][radind, rhi, li] = opncdf.variables[key][radind, 0, li]
+      opncdf.variables[key][radind, li, rhi] = opncdf.variables[key][radind, li, 0]
     elif key in nlscalarkeys:
       opncdf.variables[key][radind, rhi] = opncdf.variables[key][radind, 0]
     else:
