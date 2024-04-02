@@ -17,6 +17,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Deprecated
 
+## [1.1.2] = 2024-04-02
+
+### Fixed
+- Fixed a bug in the dimension ordering that was only encountered
+  for "trivial" RH handling applicable to dust
+
+### Added
+- Added a "dust-mie.json" case for spherical dust
+
 ## [1.1.1] - 2024-03-21
 
 ### Fixed
