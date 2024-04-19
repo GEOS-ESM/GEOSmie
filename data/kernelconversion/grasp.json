@@ -1,8 +1,8 @@
 {
     "name": "grasp-v1",
-    "path": "/path/to/kernels",
-    "fnpre":  "Rkernel1",
-    "ratios": ["033", "037", "040", "044", "048", "053", "058", "063", "069", "076", "083", "091", "100", "109", "120", "131", "144", "158", "173", "189", "207", "227", "249", "273", "299"],
+    "path": "/Users/wrespino/Synced/Local_Code_MacBook/grasp_open/src/retrieval/internal_files/KERNELS_BASE",
+    "fnpre":  "kernels",
+    "ratios": ["299"],
     "contlen": 16,
     "mrlen": 22,
     "milen": 16,
