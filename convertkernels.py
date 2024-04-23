@@ -11,7 +11,7 @@ def fun(ifn, dest):
   path = data['path']
   fnpre = data['fnpre']
   ratios = data['ratios'] # list of kernel shape id's to use (axis ratios for spheroids)
-  contlen = data['contlen'] # length of content (define?)
+  contlen = data['contlen'] # number of lines per ext/abs block in 00 kernels files (i.e., number of lines between a given "element, ratio" and the next "element, ratio")
   mrlen = data['mrlen'] # number of real refractive indices
   milen = data['milen'] # number of imaginary refractive indices
   scathdrlen = data['scathdrlen'] # number of lines in scattering element file headers
@@ -29,8 +29,6 @@ def fun(ifn, dest):
     rr = float(r) / 100.
     ratnums.append(rr)
   
-  mr = [0] * mrlen
-  mi = [0] * milen
   angs = range(numang) # TODO: Does this assume Δθ=1 always? If so, why not numang=180° always?
 
   allext = []
@@ -42,13 +40,9 @@ def fun(ifn, dest):
     print("ri %d of %d, ratio %s"%(rati+1, len(ratios), ratios[rati]))
     exti, absorb, rilist = read00(pfx, ratio, fnpre, contlen)
 
-    # get imag refractive indices
-    for i in range(len(mi)):
-      mi[i] = rilist[i][1]
-
-    # get real refractive indices
-    for i in range(len(mr)):
-      mr[i] = rilist[i*len(mi)][0]
+    # get refractive indices
+    mi = [rilist[i][1] for i in range(milen)]
+    mr = [rilist[i*milen][0] for i in range(mrlen)]
 
     scadata = []
 
@@ -88,8 +82,7 @@ def fun(ifn, dest):
 
   # save everything in netCDF
   print('Opening NetCDF and saving stuff')
-  # TODO: Are size parameters saved anywhere?
-    # Set output filename and open file
+  # Set output filename and open file
   fn = os.path.join(dest, f"kernel-{kernelname}.nc")
   
   with nc.Dataset(fn, 'w', format='NETCDF4') as ncdf: # open/create netCDF4 data file
@@ -203,7 +196,7 @@ def read00(pfx, ratio, fnpre, contlen):
     onelen = 2
   else:
     onelen = 7
-  exti, absorb, rilist = getEA(elems, onelen)
+  exti, absorb, rilist = getEA(elems, contlen)
   return exti, absorb, rilist
 
 def readEle(pfx, ratio, hdrlen, contlen, elename, fnpre):
@@ -255,13 +248,13 @@ def getOneScaMa(li):
   ret = [float(x) for x in ret]
   return ret
 
-def getEA(elems, onelen):
+def getEA(elems, contlen):
   # return separate list of all extinction and all absorb
   exti = []
   absorb = []
-  eleheader = 2 # 2 lines for each 
-  #foo1 = 7
-  foo1 = onelen
+  eleheader = 2 # each element begins with 2 header lines (element, ratio and wavel, rreal, rimag) 
+  assert not (contlen-eleheader) % 2, 'Number of data lines in block can not be odd. Is contlen correct?'
+  blockSize = int((contlen-eleheader)/2)
   rilist = []
   for ele in elems:
     hdr = ele[:eleheader]
@@ -270,9 +263,9 @@ def getEA(elems, onelen):
     mi = riline[2]
     rilist.append((mr, mi))
 
-    cont = ele[eleheader:]
-    thisexti = cont[:foo1][1:]
-    thisabs = cont[foo1:][1:]
+    contnt = ele[eleheader:]
+    thisexti = contnt[:blockSize][1:] # indexing [1:] removes "EXTINCTION" or "ABSOPRTION" header line
+    thisabs = contnt[blockSize:][1:]
 
     theseexti = getEAOne(thisexti)
     theseabs = getEAOne(thisabs)
