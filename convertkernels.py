@@ -3,6 +3,7 @@ import numpy as np
 import netCDF4 as nc
 import json
 import glob
+import re
 
 def fun(ifn, dest):
   with open(ifn) as fp:
@@ -15,10 +16,10 @@ def fun(ifn, dest):
   mrlen = data['mrlen'] # number of real refractive indices
   milen = data['milen'] # number of imaginary refractive indices
   scathdrlen = data['scathdrlen'] # number of lines in scattering element file headers
-  scatcontlen = data['scatcontlen'] # number of content (define?) lines in scattering element files
+  scatcontlen = data['scatcontlen'] # number of content (define?) lines in scattering element files (19*41+2)
   elems = data['elems'] # scattering matrix element names
-  numang = data['numang'] # number of angle points
-  scatelemlen = data['scatelemlen'] # number of lines in scattering matrix element chunks
+#   numang = data['numang'] # number of angle points
+  scatelemlen = data['scatelemlen'] # number of lines in scattering matrix element chunks (one chunk contains 181 angles corresponding to a given (x,n,k))
   kernelname = data['name']
 
   pfx = path
@@ -28,8 +29,6 @@ def fun(ifn, dest):
   for r in ratios:
     rr = float(r) / 100.
     ratnums.append(rr)
-  
-  angs = range(numang) # TODO: Does this assume Δθ=1 always? If so, why not numang=180° always?
 
   allext = []
   allabsorb = []
@@ -44,12 +43,12 @@ def fun(ifn, dest):
     mi = [rilist[i][1] for i in range(milen)]
     mr = [rilist[i*milen][0] for i in range(mrlen)]
 
+    angs = readScaAngles(pfx, ratio, fnpre, scathdrlen)
     scadata = []
-
     for ei, ele in enumerate(elems):
       thisscadata = readScatEle(pfx, ratio, ele, fnpre, scathdrlen, scatcontlen, scatelemlen)
       scadata.append(thisscadata)
-
+    
     allext.append(exti)
     allabsorb.append(absorb)
     allscadata.append(scadata)
@@ -58,7 +57,8 @@ def fun(ifn, dest):
   abso = np.zeros_like(ext)
 
   scama = np.zeros([len(ratios), len(mr), len(mi), len(x), len(elems), len(angs)])
-
+  
+  graspScaleFact=1 # this may have been 1000 in the kernels Osku originally read – TODO: 1 gives roughly correct qext but need to double check math below
   for rati in range(len(ratios)):
     print('rati %d of %d'%(rati+1, len(ratios)))
     for mri in range(len(mr)):
@@ -67,17 +67,16 @@ def fun(ifn, dest):
           # calculate the 1d index for refractive index array
           # multiplier of 1000 comes from GRASP conventions
           refraind = mri * len(mi) + mii
-          thisext = allext[rati][refraind][xi] * 1000. 
-          thisabs = allabsorb[rati][refraind][xi] * 1000.
+          thisext = allext[rati][refraind][xi] * graspScaleFact 
+          thisabs = allabsorb[rati][refraind][xi] * graspScaleFact
 
           ext[rati,mri,mii,xi] = thisext
 
           abso[rati,mri,mii,xi] = thisabs
           for eli in range(len(elems)):
             thissca = allscadata[rati][eli][refraind][xi]
-            scama[rati,mri,mii,xi,eli,:] = np.array(thissca) * 1000
+            scama[rati,mri,mii,xi,eli,:] = np.array(thissca) * graspScaleFact
           
-
   sca = ext - abso
 
   # save everything in netCDF
@@ -127,6 +126,7 @@ def fun(ifn, dest):
 
     ncdf.variables['mr'][:] = mr
     ncdf.variables['mi'][:] = mi
+    ncdf.variables['angle'][:] = angs
     ncdf.variables['ext'][:,:,:,:] = ext
     ncdf.variables['abs'][:,:,:,:] = abso
     ncdf.variables['scama'][:,:,:,:,:,:] = scama
@@ -166,6 +166,7 @@ def fun(ifn, dest):
     g = np.sum(g_pre, axis=-1).T # Note: the omissions of dθ here and in normfactor cancel out
     ncdf.variables['g'][:,:,:,:] = g
 
+
 def getSizes(pfx):
   grid = 'grid1.*'
   fn = os.path.join(pfx, grid)
@@ -180,6 +181,7 @@ def getSizes(pfx):
   sizes = [float(s) for s in sizes]
   x = [s / lamb * 2 * np.pi for s in sizes] # size parameter
   return sizes, x
+
 
 def readScatEle(pfx, ratio, ele, fnpre, hdrlen, contlen, scaelemlen):
   elename = ele
@@ -198,6 +200,7 @@ def read00(pfx, ratio, fnpre, contlen):
     onelen = 7
   exti, absorb, rilist = getEA(elems, contlen)
   return exti, absorb, rilist
+
 
 def readEle(pfx, ratio, hdrlen, contlen, elename, fnpre):
   fn0 = '%s_%s_%s.txt'%(fnpre, ratio, elename)
@@ -219,8 +222,27 @@ def readEle(pfx, ratio, hdrlen, contlen, elename, fnpre):
     start = eli * contlen
     end = (eli+1) * contlen
     elems.append(txtdata[start:end])
-
+  
   return elems
+
+
+def readScaAngles(pfx, ratio, fnpre, hdrlen):
+  fn0 = '%s_%s_%s.txt'%(fnpre, ratio, '11')
+  fn = os.path.join(pfx, fn0)
+  with open(fn) as fp:
+    header = [next(fp) for _ in range(hdrlen)]
+    header = [line.rstrip() for line in header]
+    
+  mtchPtrn = '[ ]*([0-9]+)[ ]*number of scattering angles'
+  scatAngMatch = [re.match(mtchPtrn, line) for line in header]
+  assert np.any(scatAngMatch), 'Scattering angles could not be parsed in header of scattering matrix element files.'
+  scatAngLn = np.nonzero(scatAngMatch)[0][0] # line number with scattering angle header (e.g., ' 181   number of scattering angles')
+  nScatAngs = int(scatAngMatch[scatAngLn].group(1)) # the number of scattering angles
+  scatAngsStr = ' '.join(header[scatAngLn+1:]).split()[:nScatAngs] # the scattering angles themselves (as strings)
+  scatAngsFloat = [float(sca) for sca in scatAngsStr]
+  
+  return scatAngsFloat
+  
   
 def getScaMaElem(elems, onelen):
   # return separate list of all scattering matrix values
@@ -241,12 +263,14 @@ def getScaMaElem(elems, onelen):
 
   return scama
   
+  
 def getOneScaMa(li):
   ret = []
   for e in li:
     ret += e.split()
   ret = [float(x) for x in ret]
   return ret
+
 
 def getEA(elems, contlen):
   # return separate list of all extinction and all absorb
