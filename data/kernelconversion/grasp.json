@@ -1,14 +1,13 @@
 {
-    "name": "grasp-v1",
+    "name": "grasp-v1.1.3-spheres",
     "path": "/Users/wrespino/Synced/Local_Code_MacBook/grasp_open/src/retrieval/internal_files/KERNELS_BASE",
     "fnpre":  "kernels",
-    "ratios": ["299"],
+    "ratios": ["100"],
     "contlen": 14,
     "mrlen": 22,
     "milen": 16,
-    "scathdrlen": 32,
-    "scatcontlen": 1068,
+    "scathdrlen": 25,
+    "scatcontlen": 781,
     "elems": ["11", "22", "33", "44", "12", "34"],
-    "numang": 181,
-    "scatelemlen": 26
+    "scatelemlen": 19
 }
