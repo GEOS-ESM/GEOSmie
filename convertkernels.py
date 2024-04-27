@@ -76,8 +76,21 @@ def fun(ifn, dest):
           for eli in range(len(elems)):
             thissca = allscadata[rati][eli][refraind][xi]
             scama[rati,mri,mii,xi,eli,:] = np.array(thissca) * graspScaleFact
-          
+     
+  # add extra variables
+  print('calculate extra variables')     
+  # grasp kernels need to be divided by a factor of log(x[n+1]/x[n]), i.e. the log of bin size ratios
+  graspfactors = 1/np.log(x[1:]/x[:-1])
+  assert np.any(np.diff(graspfactors) < 1e-4), 'Size bins in GRASP kernels must be log-spaced.'
+  graspfactor = graspfactors.mean() # ~3.681765 for GRASP v1.1.3 standard kernels
+  ext = ext * graspfactor
+  abso = abso * graspfactor
   sca = ext - abso
+  scama =  (scama*graspfactor)/sca[:,:,:,None,None]
+  
+  volconv = 4./3. * np.array(sizes)
+  qext = ext * volconv
+  qsca = sca * volconv
 
   # save everything in netCDF
   print('Opening NetCDF and saving stuff')
@@ -95,73 +108,67 @@ def fun(ifn, dest):
     ncdf.createDimension('scattering_element', len(elems))
 
     # Create variables
-    usezlib = False
     ncdf.createVariable('ratio', 'f8', ('ratio'), zlib=usezlib)
     ncdf.createVariable('mr', 'f8', ('mr'), zlib=usezlib)
     ncdf.createVariable('mi', 'f8', ('mi'), zlib=usezlib)
     ncdf.createVariable('x', 'f8', ('x'), zlib=usezlib)
     ncdf.createVariable('angle', 'f8', ('angle'), zlib=usezlib)
-
-    ncdf.variables['x'][:] = x
-    ncdf.variables['ratio'][:] = ratnums
+    ncdf.createVariable('scattering_element', 'u1', ('scattering_element'), zlib=usezlib)
 
     scalarelems = ('ratio', 'mr', 'mi', 'x')
     scatelems = ('ratio', 'mr', 'mi', 'x', 'scattering_element', 'angle')
 
-    ncdf.createVariable('ext', 'f8', scalarelems, zlib=usezlib)
-    ncdf.createVariable('abs', 'f8', scalarelems, zlib=usezlib)
-    ncdf.createVariable('sca', 'f8', scalarelems, zlib=usezlib)
+    desc = "This is extinction cross section per unit of particle volume.\
+       Alternatively, the extinction coefficient for a volume concentration of unity.\
+       ext * ρ = βext where ρ is particle density and βext is mass extinction efficiency."
+    varDict = {'ext': 'extinction', 'abs': 'absorption', 'sca': 'scattering'}
+    for short,full in varDict:
+      longname = 'volume %s efficiency' % full
+      descNow = desc.replace('extinction',full).repace('ext',short)
+      nc4VarSetup(ncdf, short, '1/um', scalarelems, longname, desc=descNow)
+      if short is not 'abs': # absorption is not derived 
+        longname = '%s efficiency' % full
+        nc4VarSetup(ncdf, 'q'+short, 'none', scalarelems, longname)
+        longname = '%s crosss section and λ=0.340μm' % full
+        nc4VarSetup(ncdf, 'c'+short, 'μm^2', scalarelems, longname)
 
-    ncdf.createVariable('qext', 'f8', scalarelems, zlib=usezlib)
-    ncdf.createVariable('qabs', 'f8', scalarelems, zlib=usezlib)
-    ncdf.createVariable('qsca', 'f8', scalarelems, zlib=usezlib)
-    ncdf.createVariable('cext', 'f8', scalarelems, zlib=usezlib)
-    ncdf.createVariable('cabs', 'f8', scalarelems, zlib=usezlib)
-    ncdf.createVariable('csca', 'f8', scalarelems, zlib=usezlib)
-    ncdf.createVariable('qb', 'f8', scalarelems, zlib=usezlib)
-    ncdf.createVariable('lidar_ratio', 'f8', scalarelems, zlib=usezlib)
-    ncdf.createVariable('g', 'f8', scalarelems, zlib=usezlib)
+    nc4VarSetup(ncdf, 'qb', '1/sr', scalarelems, 'backscattering efficiency')
+    nc4VarSetup(ncdf, 'lidar_ratio', '1/sr', scalarelems, 'lidar ratio')
+    nc4VarSetup(ncdf, 'g', 'none', scalarelems, 'asymmetry parameter')
+    desc = 'Normalized such that p11(θ)*sin(θ)*dθ intgrated from 0 to π equals 2.'
+    nc4VarSetup(ncdf, 'scama', '1/sr', scatelems, 'scattering matrix elements', desc=desc)
 
-    ncdf.createVariable('scama', 'f8', scatelems, zlib=usezlib)
-
+    ncdf.variables['x'][:] = x
+    ncdf.variables['ratio'][:] = ratnums
     ncdf.variables['mr'][:] = mr
     ncdf.variables['mi'][:] = mi
     ncdf.variables['angle'][:] = angs
+    ncdf.variables['scattering_element'][:] = [int(el) for el in elems]
     ncdf.variables['ext'][:,:,:,:] = ext
     ncdf.variables['abs'][:,:,:,:] = abso
+    ncdf.variables['sca'][:,:,:,:] = sca
     ncdf.variables['scama'][:,:,:,:,:,:] = scama
 
-    # add extra variables
-    print('calculate extra variables')
-
-    ncdf.variables['sca'][:,:,:,:] = sca
-    volconv = 4./3. * np.array(sizes)
-
-    # grasp kernels need to be divided by a factor of log(x[n+1]/x[n]), i.e. the log of bin size ratios
-    # for the size bins used here this ends up being a multiplication by 3.68176736
-    graspfactor = 3.68176736 # TODO: Calculate this with above formula from sizes variable.
-    ncdf.variables['qsca'][:,:,:,:] = ncdf.variables['sca'][:,:,:,:] * volconv * graspfactor
-    ncdf.variables['qext'][:,:,:,:] = ncdf.variables['ext'][:,:,:,:] * volconv * graspfactor
+    ncdf.variables['qsca'][:,:,:,:] = qsca
+    ncdf.variables['qext'][:,:,:,:] = qext
 
     # calculate cross-sections by multiplying efficiencies by geom cross-section of equivalent spheres
     areaconv = np.pi * np.array(sizes) ** 2
     ncdf.variables['csca'][:,:,:,:] = ncdf.variables['qsca'][:,:,:,:] * areaconv
     ncdf.variables['cext'][:,:,:,:] = ncdf.variables['qext'][:,:,:,:] * areaconv
 
-    f11 = ncdf.variables['scama'][:,:,:,:,0,:]
-    f11back = ncdf.variables['scama'][:,:,:,:,0,-1]
+    p11 = ncdf.variables['scama'][:,:,:,:,0,:]
+    p11back = ncdf.variables['scama'][:,:,:,:,0,-1]
     qsca = ncdf.variables['qsca'][:,:,:,:] 
     qext = ncdf.variables['qext'][:,:,:,:] 
 
-    # scama is normalized so we un-normalize it by multiplying by scattering cross-section? <– Below would suggest it is absolute, not normalized...?
-    pBck = f11back / sca # get p11 from f11 by dividing by sca
-    qBck = pBck * ncdf.variables['qsca'][:,:,:,:] # get backscattering efficiency by multiplying p11 by qsca
-
+    qBck = p11back * ncdf.variables['qsca'][:,:,:,:] # get backscattering efficiency by multiplying p11 by qsca
     ncdf.variables['qb'][:,:,:,:] = qBck
 
+    # TODO: We can pull the normfactor part out below since p11 is normalized out of kernel files
     angs = np.radians(angs)
-    normfactor = np.sum(f11 * np.sin(angs), axis=-1)
-    f11n = np.array([f11[:,:,:,:,ai] / normfactor for ai in range(len(angs))])
+    normfactor = np.sum(p11 * np.sin(angs), axis=-1)
+    f11n = np.array([p11[:,:,:,:,ai] / normfactor for ai in range(len(angs))])
     g_pre = np.cos(angs) * np.sin(angs) * f11n.T
     g = np.sum(g_pre, axis=-1).T # Note: the omissions of dθ here and in normfactor cancel out
     ncdf.variables['g'][:,:,:,:] = g
@@ -306,3 +313,11 @@ def getEAOne(li):
     ret += e.split()
   ret = [float(x) for x in ret]
   return ret
+
+
+def nc4VarSetup(ncdf, nc4Key, units, dims, lngNm=None, varTyp='f8', desc=None, usezlib=False):
+  varHnds[nc4Key] = ncdf.createVariable(nc4Key, varTyp, dims, zlib=usezlib)
+  varHnds[nc4Key].units = units
+  if desc: varHnds[nc4Key].description = desc
+  if desc: varHnds[nc4Key].long_name = lngNm
+  
