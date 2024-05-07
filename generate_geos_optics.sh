@@ -4,5 +4,5 @@
 #./runbands.py --namelist namelists/geos_bands.txt
 
 # following namelists exclude dust and can be run directly after installing GEOSmie
-./runoptics.py --namelist namelists/geos_nodust.txt
-./runbands.py --namelist namelists/geos_nodust_bands.txt
+./runoptics.py --dest x --namelist namelists/geos_nodust.txt
+./runbands.py --dest x --namelist namelists/geos_nodust_bands.txt
