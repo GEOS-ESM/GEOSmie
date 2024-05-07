@@ -39,7 +39,7 @@ def doConversion(infn, outfn, pfx, oppclassic):
     dimsizes = {'radius': 2}
   else:
     dimsizes = {'bin': 2}
-  
+
   for dimname,dim in list(f.dimensions.items()):
     # if you want to make changes in the dimensions of the new file
     # you should add your own conditions here before the creation of the dimension.
@@ -53,14 +53,19 @@ def doConversion(infn, outfn, pfx, oppclassic):
     # if you want to make changes in the variables of the new file
     # you should add your own conditions here before the creation of the variable.
     var = g.createVariable(varname,ncvar.dtype,ncvar.dimensions,compression='zlib')
+
     #Proceed to copy the variable attributes
     for attname in ncvar.ncattrs():
        setattr(var,attname,getattr(ncvar,attname))
     #Finally copy the variable data to the new created variable
     if var.shape != ncvar.shape:
       if len(var.shape) == 1:
-        for vari in range(len(var.shape)):
-          var[vari] = ncvar[0]
+        if varname in dimsizes:
+          var[0] = 1
+          var[1] = 2
+        else:
+          for vari in range(len(var.shape)):
+            var[vari] = ncvar[0]
       elif len(var.shape) == 2:
         for ri in range(var.shape[0]):
           for rhi in range(var.shape[1]):
