@@ -205,12 +205,12 @@ def find_closest_ind(myList, myNumber, typ='none',ide=''):
 def createNCDF(ncdfID, oppfx, rarr, rharr, lambarr, ang, oppclassic):
 
   if oppclassic:
-    ncdf = netCDF4.Dataset(os.path.join(oppfx, 'integ-%s.legacy.nc'%ncdfID), 'w')
+    ncdf = netCDF4.Dataset(os.path.join(oppfx, 'optics_%s.geosmie.legacy.nc'%ncdfID), 'w')
     radiusNm = 'radius'
     lambdaNm = 'lambda'
     npolNm   = 'nPol'
   else:
-    ncdf = netCDF4.Dataset(os.path.join(oppfx, 'integ-%s.nc'%ncdfID), 'w')
+    ncdf = netCDF4.Dataset(os.path.join(oppfx, 'optics_%s.geosmie.nc'%ncdfID), 'w')
     radiusNm = 'bin'
     lambdaNm = 'wavelength'
     npolNm   = 'p'
@@ -659,7 +659,7 @@ def fun(partID0, datatype, oppfx, oppclassic):
 
   print("\n ####################\n Starting case %s\n ####################\n"%partID)
 
-  ncdfID = '%s-raw'%partID
+  ncdfID = '%s'%partID
   if '-orig' in partID:
     partID2 = partID0.replace('-orig', '')
   else:
@@ -671,9 +671,10 @@ def fun(partID0, datatype, oppfx, oppclassic):
   # or using GRASP-like kernel files. Code does not presently include
   # any alternative internal calculations to Mie.
   mode = 'mie'
-  if 'shape' in params:
-    mode = params['shape']
-  if mode == 'spheroid' or mode == 'spheroid_sphere':
+  if 'mode' in params:
+    mode = params['mode']
+#  if mode == 'spheroid' or mode == 'spheroid_sphere':
+  if mode == 'kernel':
     useGrasp = True
   elif mode == 'mie':
     useGrasp = False
@@ -861,6 +862,7 @@ def fun(partID0, datatype, oppfx, oppclassic):
           allmi = -ret0['mi'][:] # change sign
 
           keys = ['ext', 'abs', 'sca', 'qext', 'qabs', 'qsca', 'qb', 'g', 'cext', 'csca', 'cabs']
+#          keys = ['ext', 'abs', 'sca', 'qext', 'qsca', 'qb', 'g', 'cext', 'csca']
           scatelekeys = ['scama']
           scatelems = ['s11', 's22', 's33', 's44', 's12', 's34'] # order Mischenko's code expects
           ret1 = {}
