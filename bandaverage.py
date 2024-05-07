@@ -227,7 +227,10 @@ def fun(data, part, opfn, mode, useSolar, noIR):
   nchar = 80
   opncdf.createDimension('nchar',nchar)
   for varName in output.keys():
-    opncdf.createVariable(varName, 'f8', (radiusNm, lamNm, 'rh'), compression='zlib')
+    if oppclassic:
+      opncdf.createVariable(varName, 'f8', (radiusNm, 'rh', lamNm), compression='zlib')
+    else:
+      opncdf.createVariable(varName, 'f8', (radiusNm, lamNm, 'rh'), compression='zlib')
     #print(opncdf.variables[varName].shape)
     #print(output[varName].shape)
     #print(opncdf.variables[varName][:].shape)
