@@ -4,6 +4,7 @@ import netCDF4 as nc
 import json
 import glob
 import re
+from scipy import integrate
 
 def fun(ifn, dest):
   with open(ifn) as fp:
@@ -21,6 +22,7 @@ def fun(ifn, dest):
 #   numang = data['numang'] # number of angle points
   scatelemlen = data['scatelemlen'] # number of lines in scattering matrix element chunks (one chunk contains 181 angles corresponding to a given (x,n,k))
   kernelname = data['name']
+  xMaxRenorm = data['renormUpperX'] # largest size parameter for which PM elements are renormalized (0 for no renomralization)
 
   pfx = path
   sizes, x = getSizes(pfx)
@@ -77,7 +79,7 @@ def fun(ifn, dest):
             scama[rati,mri,mii,xi,eli,:] = np.array(thissca) * graspScaleFact
      
   # add extra variables
-  print('calculate extra variables')     
+  print('calculating extra variables')     
   # grasp kernels need to be divided by a factor of log(x[n+1]/x[n]), i.e. the log of bin size ratios
   graspfactors = 1/np.log(np.divide(x[1:],x[:-1])) # this is separate from from "graspScaleFact" above
   assert np.any(np.diff(graspfactors) < 1e-4), 'Size bins in GRASP kernels must be log-spaced.'
@@ -86,6 +88,17 @@ def fun(ifn, dest):
   abso = abso * graspfactor
   sca = ext - abso
   scama =  (scama*graspfactor)/sca[:,:,:,:,None,None]
+
+
+  # Phase matrix element renormilzation 
+  ang_rad = np.radians(angs)
+  if xMaxRenorm>0: # Renormalize below x<xMaxRenorm (GRASP normalization noisy at x<0.1)
+    lowxInd = np.asarray(x) < xMaxRenorm
+    p11_raw = scama[:,:,:,lowxInd,0,:]
+    kern = np.sin(ang_rad)
+    nf1 = integrate.simpson(p11_raw * kern, x=ang_rad, axis=-1)/2
+    # Renormalize all PM elements to preserve their ratios which appear correct
+    scama[:,:,:,lowxInd,:,:] = scama[:,:,:,lowxInd,:,:]/nf1[:,:,:,:,None,None]
   
   volconv = 4./3. * np.array(sizes)
   qext = ext * volconv
@@ -166,8 +179,6 @@ def fun(ifn, dest):
 
     p11 = ncdf.variables['scama'][:,:,:,:,0,:]
     p11back = ncdf.variables['scama'][:,:,:,:,0,-1]
-    qsca = ncdf.variables['qsca'][:,:,:,:] # TODO: Are the following two variables used?
-    qext = ncdf.variables['qext'][:,:,:,:] 
 
     qBck = p11back * ncdf.variables['qsca'][:,:,:,:] # get backscattering efficiency by multiplying p11 by qsca
     ncdf.variables['qb'][:,:,:,:] = qBck
