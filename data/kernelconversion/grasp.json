@@ -1,5 +1,5 @@
 {
-    "name": "grasp-v1.1.3-integrated_V2",
+    "name": "grasp-v1.1.3-integrated_V3",
     "path": "/Users/wrespino/Synced/Local_Code_MacBook/grasp_open/src/retrieval/internal_files/KERNELS_BASE",
     "fnpre":  "kernels",
     "ratios": ["100", "299"],
@@ -9,5 +9,6 @@
     "scathdrlen": 25,
     "scatcontlen": 781,
     "elems": ["11", "22", "33", "44", "12", "34"],
-    "scatelemlen": 19
+    "scatelemlen": 19,
+    "renormUpperX": 0.3
 }

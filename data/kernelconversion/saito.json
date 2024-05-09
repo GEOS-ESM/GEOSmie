@@ -10,4 +10,5 @@
     "scatcontlen": 275,
     "elems": ["11", "22", "33", "44", "12", "43"],
     "scatelemlen": 1
+    "renormUpperX": 0
 }
