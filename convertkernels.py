@@ -132,11 +132,10 @@ def fun(ifn, dest):
       longname = 'volume %s efficiency' % full
       descNow = desc.replace('extinction',full).replace('ext',short)
       nc4VarSetup(ncdf, short, '1/um', scalarelems, longname, desc=descNow)
-      if not short=='abs': # absorption is not derived 
-        longname = '%s efficiency' % full
-        nc4VarSetup(ncdf, 'q'+short, 'none', scalarelems, longname)
-        longname = '%s crosss section at λ=0.340μm' % full # TODO: remove hardcoding of wavelength here
-        nc4VarSetup(ncdf, 'c'+short, 'μm^2', scalarelems, longname)
+      longname = '%s efficiency' % full
+      nc4VarSetup(ncdf, 'q'+short, 'none', scalarelems, longname)
+      longname = '%s crosss section at λ=0.340μm' % full # TODO: remove hardcoding of wavelength here
+      nc4VarSetup(ncdf, 'c'+short, 'μm^2', scalarelems, longname)
 
     nc4VarSetup(ncdf, 'qb', '1/sr', scalarelems, 'backscattering efficiency')
     nc4VarSetup(ncdf, 'lidar_ratio', '1/sr', scalarelems, 'lidar ratio')
@@ -157,15 +156,17 @@ def fun(ifn, dest):
 
     ncdf.variables['qsca'][:,:,:,:] = qsca
     ncdf.variables['qext'][:,:,:,:] = qext
-
+    ncdf.variables['qabs'][:,:,:,:] = qext - qsca
+    
     # calculate cross-sections by multiplying efficiencies by geom cross-section of equivalent spheres
     areaconv = np.pi * np.array(sizes) ** 2
     ncdf.variables['csca'][:,:,:,:] = ncdf.variables['qsca'][:,:,:,:] * areaconv
     ncdf.variables['cext'][:,:,:,:] = ncdf.variables['qext'][:,:,:,:] * areaconv
+    ncdf.variables['cabs'][:,:,:,:] = ncdf.variables['cext'][:,:,:,:] - ncdf.variables['csca'][:,:,:,:]
 
     p11 = ncdf.variables['scama'][:,:,:,:,0,:]
     p11back = ncdf.variables['scama'][:,:,:,:,0,-1]
-    qsca = ncdf.variables['qsca'][:,:,:,:] 
+    qsca = ncdf.variables['qsca'][:,:,:,:] # TODO: Are the following two variables used?
     qext = ncdf.variables['qext'][:,:,:,:] 
 
     qBck = p11back * ncdf.variables['qsca'][:,:,:,:] # get backscattering efficiency by multiplying p11 by qsca
