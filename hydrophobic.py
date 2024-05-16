@@ -89,13 +89,21 @@ def doConversion(infn, outfn, pfx, oppclassic):
               else: # regular case
                 var[ri,:,rhi] = ncvar[0,:,rhi] # set hydrophilic RH case 
       elif len(var.shape) == 4:
-        if oppclassic:
+       if var.shape[0] == 6: # this is pback in legacy case that we have to handle separately
           for ri in range(var.shape[1]):
             for rhi in range(var.shape[2]):
               if ri == 0: # hydrophobic case
-                var[:,0,rhi,:] = ncvar[:,0,0,:] # set zero RH case 
+                var[:,0,rhi,:] = ncvar[:,0,0,:] # set zero RH case
               else: # regular case
-                var[:,ri,rhi,:] = ncvar[:,0,rhi,:] # set hydrophilic RH case 
+                var[:,ri,rhi,:] = ncvar[:,0,rhi,:] # set zero RH case
+       else:
+        if oppclassic:
+          for ri in range(var.shape[0]):
+            for rhi in range(var.shape[1]):
+              if ri == 0: # hydrophobic case
+                var[0,rhi,:,:] = ncvar[0,0,:,:] # set zero RH case 
+              else: # regular case
+                var[ri,rhi,:,:] = ncvar[0,rhi,:,:] # set hydrophilic RH case 
         else:
           for ri in range(var.shape[0]):
             for rhi in range(var.shape[2]):
