@@ -19,13 +19,14 @@ def fun(ifn, dest):
   scathdrlen = data['scathdrlen'] # number of lines in scattering element file headers
   scatcontlen = data['scatcontlen'] # number of content (define?) lines in scattering element files (19*41+2)
   elems = data['elems'] # scattering matrix element names
-#   numang = data['numang'] # number of angle points
+  #   numang = data['numang'] # number of angle points
   scatelemlen = data['scatelemlen'] # number of lines in scattering matrix element chunks (one chunk contains 181 angles corresponding to a given (x,n,k))
   kernelname = data['name']
   xMaxRenorm = data['renormUpperX'] # largest size parameter for which PM elements are renormalized (0 for no renomralization)
+  angFwdPeak = data['angFwdPeak'] # angle [degrees] of forward peak in asymmetry parameter calculation truncation correction; 0 -> no correction (e.g., with high angular res. Saito DB) 
 
   pfx = path
-  sizes, x = getSizes(pfx)
+  sizes, x, lamb = getSizes(pfx)
 
   ratnums = []
   for r in ratios:
@@ -70,16 +71,16 @@ def fun(ifn, dest):
           refraind = mri * len(mi) + mii
           thisext = allext[rati][refraind][xi] * graspScaleFact 
           thisabs = allabsorb[rati][refraind][xi] * graspScaleFact
-
           ext[rati,mri,mii,xi] = thisext
-
           abso[rati,mri,mii,xi] = thisabs
           for eli in range(len(elems)):
             thissca = allscadata[rati][eli][refraind][xi]
             scama[rati,mri,mii,xi,eli,:] = np.array(thissca) * graspScaleFact
      
-  # add extra variables
+     
+  # clean up units and add extra variables
   print('calculating extra variables')     
+  
   # grasp kernels need to be divided by a factor of log(x[n+1]/x[n]), i.e. the log of bin size ratios
   graspfactors = 1/np.log(np.divide(x[1:],x[:-1])) # this is separate from from "graspScaleFact" above
   assert np.any(np.diff(graspfactors) < 1e-4), 'Size bins in GRASP kernels must be log-spaced.'
@@ -89,21 +90,42 @@ def fun(ifn, dest):
   sca = ext - abso
   scama =  (scama*graspfactor)/sca[:,:,:,:,None,None]
 
-
   # Phase matrix element renormilzation 
   ang_rad = np.radians(angs)
+  kern = np.sin(ang_rad)
   if xMaxRenorm>0: # Renormalize below x<xMaxRenorm (GRASP normalization noisy at x<0.1)
     lowxInd = np.asarray(x) < xMaxRenorm
     p11_raw = scama[:,:,:,lowxInd,0,:]
-    kern = np.sin(ang_rad)
     nf1 = integrate.simpson(p11_raw * kern, x=ang_rad, axis=-1)/2
     # Renormalize all PM elements to preserve their ratios which appear correct
     scama[:,:,:,lowxInd,:,:] = scama[:,:,:,lowxInd,:,:]/nf1[:,:,:,:,None,None]
   
+  # Integrate over scattering angle to find asymmetry parameters
+  noPeaki = np.asarray(angs) >= angFwdPeak # define region outside of forward peak for which integration is assumed accurate
+  if angFwdPeak > 0: # if >20 angles exist within forward peak (e.g., in Saito DB) we assume traditional integration is accurate 
+    nf_noPeak = integrate.simpson(scama[:,:,:,:,0,noPeaki] * kern[noPeaki], x=ang_rad[noPeaki], axis=-1)
+    nf_peak = 2 - nf_noPeak # the contribution from the peak summed with above integral should give 2 since P11 is in units of sr-1
+  else: # we will determine g by integrating over the full range [0°,180°]
+    nf_peak = 0 # there is no separate contribution from the forward peak because it will be included in the main integral
+  kern_g = np.cos(ang_rad[noPeaki]) * kern[noPeaki] # asymmetry parameter is integral of p11 weighted by cos(θ)sin(θ)
+  g_noPeak = integrate.simpson(scama[:,:,:,:,0,noPeaki] * kern_g, x=ang_rad[noPeaki], axis=-1)
+  g = (g_noPeak + nf_peak)/2 # cos(θ)sin(θ)->sin(θ) as θ->0° so the contribution to nf from the forward peak approximates its contribution to g
+  
+  # Calculate optical efficiencies 
   volconv = 4./3. * np.array(sizes)
   qext = ext * volconv
   qsca = sca * volconv
 
+  # Calculate backscattering efficiencies 
+  p11back = scama[:,:,:,:,0,-1]
+  qBck = p11back * qsca # get backscattering efficiency by multiplying p11 by qsca
+
+  # calculate cross-sections by multiplying efficiencies by geom cross-section of equivalent spheres
+  areaconv = np.pi * np.array(sizes) ** 2
+  csca = qsca * areaconv
+  cext = qext * areaconv
+  
+  
   # save everything in netCDF
   print('Opening NetCDF and saving stuff')
   # Set output filename and open file
@@ -119,7 +141,7 @@ def fun(ifn, dest):
     ncdf.createDimension('angle', len(angs))
     ncdf.createDimension('scattering_element', len(elems))
 
-    # Create variables
+    # Create 1D variables
     usezlib = False
     ncdf.createVariable('ratio', 'f8', ('ratio'), zlib=usezlib)
     ncdf.variables['ratio'].long_name = 'aspect ratio'
@@ -134,9 +156,9 @@ def fun(ifn, dest):
     ncdf.variables['angle'].units = 'degree'
     ncdf.createVariable('scattering_element', 'u1', ('scattering_element'), zlib=usezlib)
 
+    # Create Multidimensional variables
     scalarelems = ('ratio', 'mr', 'mi', 'x')
     scatelems = ('ratio', 'mr', 'mi', 'x', 'scattering_element', 'angle')
-
     desc = "This is extinction cross section per unit of particle volume.\
        Alternatively, the extinction coefficient for a volume concentration of unity.\
        ext * ρ = βext where ρ is particle density and βext is mass extinction efficiency."
@@ -147,15 +169,15 @@ def fun(ifn, dest):
       nc4VarSetup(ncdf, short, '1/um', scalarelems, longname, desc=descNow)
       longname = '%s efficiency' % full
       nc4VarSetup(ncdf, 'q'+short, 'none', scalarelems, longname)
-      longname = '%s crosss section at λ=0.340μm' % full # TODO: remove hardcoding of wavelength here
+      longname = '%s crosss section at λ=%5.3fμm' % (full, lamb)
       nc4VarSetup(ncdf, 'c'+short, 'μm^2', scalarelems, longname)
-
     nc4VarSetup(ncdf, 'qb', '1/sr', scalarelems, 'backscattering efficiency')
     nc4VarSetup(ncdf, 'lidar_ratio', '1/sr', scalarelems, 'lidar ratio')
     nc4VarSetup(ncdf, 'g', 'none', scalarelems, 'asymmetry parameter')
     desc = 'Normalized such that p11(θ)*sin(θ)*dθ intgrated from 0 to π equals 2.'
     nc4VarSetup(ncdf, 'scama', '1/sr', scatelems, 'scattering matrix elements', desc=desc)
 
+    # Write data to variables
     ncdf.variables['x'][:] = x
     ncdf.variables['ratio'][:] = ratnums
     ncdf.variables['mr'][:] = mr
@@ -166,33 +188,13 @@ def fun(ifn, dest):
     ncdf.variables['abs'][:,:,:,:] = abso
     ncdf.variables['sca'][:,:,:,:] = sca
     ncdf.variables['scama'][:,:,:,:,:,:] = scama
-
     ncdf.variables['qsca'][:,:,:,:] = qsca
     ncdf.variables['qext'][:,:,:,:] = qext
     ncdf.variables['qabs'][:,:,:,:] = qext - qsca
-    
-    # calculate cross-sections by multiplying efficiencies by geom cross-section of equivalent spheres
-    areaconv = np.pi * np.array(sizes) ** 2
-    ncdf.variables['csca'][:,:,:,:] = ncdf.variables['qsca'][:,:,:,:] * areaconv
-    ncdf.variables['cext'][:,:,:,:] = ncdf.variables['qext'][:,:,:,:] * areaconv
-    ncdf.variables['cabs'][:,:,:,:] = ncdf.variables['cext'][:,:,:,:] - ncdf.variables['csca'][:,:,:,:]
-
-    p11 = ncdf.variables['scama'][:,:,:,:,0,:]
-    p11back = ncdf.variables['scama'][:,:,:,:,0,-1]
-
-    qBck = p11back * ncdf.variables['qsca'][:,:,:,:] # get backscattering efficiency by multiplying p11 by qsca
+    ncdf.variables['csca'][:,:,:,:] = csca
+    ncdf.variables['cext'][:,:,:,:] = cext
+    ncdf.variables['cabs'][:,:,:,:] = cext - csca
     ncdf.variables['qb'][:,:,:,:] = qBck
-
-    # TODO: normfactor part below is (in theory) no longer needed as p11 is now in units of sr-1
-    # However, normfactors for largest ~10 size parameters come out to as little as 10% of what they should be
-    # Presumable this comes from summation error around forward peak and may somewhat cancel similar error in calculation of g?
-    # (g become vary erratic and frequently decreases at the largest x so errors are clearly not cancelling out completely)
-    # Probably better though to remove normfactor and use an improved numerical integration technique to calculate g
-    angs = np.radians(angs)
-    normfactor = np.sum(p11 * np.sin(angs), axis=-1) # 2/dθ = 2*(180/π) ≈ 114.6 for most size parameters
-    f11n = np.array([p11[:,:,:,:,ai] / normfactor for ai in range(len(angs))])
-    g_pre = np.cos(angs) * np.sin(angs) * f11n.T
-    g = np.sum(g_pre, axis=-1).T # Note: the omissions of dθ here and in normfactor cancel out
     ncdf.variables['g'][:,:,:,:] = g
 
 
@@ -209,7 +211,7 @@ def getSizes(pfx):
   sizes = lines[1:numsizes+1]
   sizes = [float(s) for s in sizes]
   x = [s / lamb * 2 * np.pi for s in sizes] # size parameter
-  return sizes, x
+  return sizes, x, lamb
 
 
 def readScatEle(pfx, ratio, ele, fnpre, hdrlen, contlen, scaelemlen):
