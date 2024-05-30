@@ -17,10 +17,9 @@ def fun(ifn, dest):
   mrlen = data['mrlen'] # number of real refractive indices
   milen = data['milen'] # number of imaginary refractive indices
   scathdrlen = data['scathdrlen'] # number of lines in scattering element file headers
-  scatcontlen = data['scatcontlen'] # number of content (define?) lines in scattering element files (19*41+2)
+  scatcontlen = data['scatcontlen'] # number of lines for a given [mr,mi] block in phase matrix element kernels files (i.e., number of lines between a given "element, ratio" and the next "element, ratio")
   elems = data['elems'] # scattering matrix element names
-  #   numang = data['numang'] # number of angle points
-  scatelemlen = data['scatelemlen'] # number of lines in scattering matrix element chunks (one chunk contains 181 angles corresponding to a given (x,n,k))
+  scatelemlen = data['scatelemlen'] # number of lines in scattering matrix element chunks (e.g., one chunk contains 181 angles corresponding to a given (x,n,k))
   kernelname = data['name']
   xMaxRenorm = data['renormUpperX'] # largest size parameter for which PM elements are renormalized (0 for no renomralization)
   angFwdPeak = data['angFwdPeak'] # angle [degrees] of forward peak in asymmetry parameter calculation truncation correction; 0 -> no correction (e.g., with high angular res. Saito DB) 
