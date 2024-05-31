@@ -9,7 +9,8 @@
     "scathdrlen": 56,
     "scatcontlen": 275,
     "elems": ["11", "22", "33", "44", "12", "43"],
-    "scatelemlen": 1
-    "renormUpperX": 0
-    "angFwdPeak": 0    
+    "scatelemlen": 1,
+    "renormUpperX": 0,
+    "angFwdPeak": 0,
+    "kernelScaleFact": 1 
 }

@@ -11,5 +11,6 @@
     "elems": ["11", "22", "33", "44", "12", "34"],
     "scatelemlen": 19,
     "renormUpperX": 0.3,
-    "angFwdPeak": 2
+    "angFwdPeak": 2,
+    "kernelScaleFact": 1
 }

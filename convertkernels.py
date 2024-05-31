@@ -10,27 +10,25 @@ def fun(ifn, dest):
   with open(ifn) as fp:
     data = json.load(fp)
 
-  path = data['path']
-  fnpre = data['fnpre']
+  kernelname = data['name'] # name of output file (saved in working directory)
+  path = data['path'] # path to the kernel files to be read in
+  fnpre = data['fnpre'] # filename preface of kernels to be read in (e.g. "Rkernel1")
   ratios = data['ratios'] # list of kernel shape id's to use (axis ratios for spheroids)
   contlen = data['contlen'] # number of lines per ext/abs block in 00 kernels files (i.e., number of lines between a given "element, ratio" and the next "element, ratio")
   mrlen = data['mrlen'] # number of real refractive indices
   milen = data['milen'] # number of imaginary refractive indices
   scathdrlen = data['scathdrlen'] # number of lines in scattering element file headers
   scatcontlen = data['scatcontlen'] # number of lines for a given [mr,mi] block in phase matrix element kernels files (i.e., number of lines between a given "element, ratio" and the next "element, ratio")
-  elems = data['elems'] # scattering matrix element names
+  elems = data['elems'] # 2 digit scattering matrix element indices as strings
   scatelemlen = data['scatelemlen'] # number of lines in scattering matrix element chunks (e.g., one chunk contains 181 angles corresponding to a given (x,n,k))
-  kernelname = data['name']
   xMaxRenorm = data['renormUpperX'] # largest size parameter for which PM elements are renormalized (0 for no renomralization)
   angFwdPeak = data['angFwdPeak'] # angle [degrees] of forward peak in asymmetry parameter calculation truncation correction; 0 -> no correction (e.g., with high angular res. Saito DB) 
+  kernelScaleFact = data['kernelScaleFact'] # unity for GRASP v1.1.3 kernels; kernel values multiplied by kernelScaleFact should give units of 1/μm 
 
   pfx = path
   sizes, x, lamb = getSizes(pfx)
 
-  ratnums = []
-  for r in ratios:
-    rr = float(r) / 100.
-    ratnums.append(rr)
+  ratnums = [float(r)/100 for r in ratios]
 
   allext = []
   allabsorb = []
@@ -60,7 +58,6 @@ def fun(ifn, dest):
 
   scama = np.zeros([len(ratios), len(mr), len(mi), len(x), len(elems), len(angs)])
   
-  graspScaleFact=1 # this may have been 1000 in the kernels Osku originally read – TODO: 1 gives roughly correct qext but need to double check math below
   for rati in range(len(ratios)):
     print('rati %d of %d'%(rati+1, len(ratios)))
     for mri in range(len(mr)):
@@ -68,25 +65,26 @@ def fun(ifn, dest):
         for xi in range(len(x)):
           # calculate the 1d index for refractive index array
           refraind = mri * len(mi) + mii
-          thisext = allext[rati][refraind][xi] * graspScaleFact 
-          thisabs = allabsorb[rati][refraind][xi] * graspScaleFact
+          thisext = allext[rati][refraind][xi] * kernelScaleFact 
+          thisabs = allabsorb[rati][refraind][xi] * kernelScaleFact
           ext[rati,mri,mii,xi] = thisext
           abso[rati,mri,mii,xi] = thisabs
           for eli in range(len(elems)):
             thissca = allscadata[rati][eli][refraind][xi]
-            scama[rati,mri,mii,xi,eli,:] = np.array(thissca) * graspScaleFact
+            scama[rati,mri,mii,xi,eli,:] = np.array(thissca) * kernelScaleFact
      
      
   # clean up units and add extra variables
   print('calculating extra variables')     
   
   # grasp kernels need to be divided by a factor of log(x[n+1]/x[n]), i.e. the log of bin size ratios
-  graspfactors = 1/np.log(np.divide(x[1:],x[:-1])) # this is separate from from "graspScaleFact" above
+  graspfactors = 1/np.log(np.divide(x[1:],x[:-1])) # this is separate from from "kernelScaleFact" above
   assert np.any(np.diff(graspfactors) < 1e-4), 'Size bins in GRASP kernels must be log-spaced.'
   graspfactor = graspfactors.mean() # ~3.681765 for GRASP v1.1.3 standard kernels
   ext = ext * graspfactor
   abso = abso * graspfactor
   sca = ext - abso
+  sca[sca==0] = abso[sca==0]/1e7 # sca==0 is nonphysical but ext and abso only stored to 7 decimal places in the kernel text files
   scama =  (scama*graspfactor)/sca[:,:,:,:,None,None]
 
   # Phase matrix element renormilzation 
@@ -221,7 +219,6 @@ def readScatEle(pfx, ratio, ele, fnpre, hdrlen, contlen, scaelemlen):
 
 def read00(pfx, ratio, fnpre, contlen):
   hdrlen = 5 # number of header lines
-  #contlen = 16 # how long each "element" is
   elename = '00'
   elems = readEle(pfx, ratio, hdrlen, contlen, elename, fnpre)
   if contlen == 6:
@@ -263,7 +260,7 @@ def readScaAngles(pfx, ratio, fnpre, hdrlen):
     header = [next(fp) for _ in range(hdrlen)]
     header = [line.rstrip() for line in header]
     
-  mtchPtrn = '[ ]*([0-9]+)[ ]*number of scattering angles'
+  mtchPtrn = '[ ]*([0-9]+)[ ]*number of (?:scattering )?angles'
   scatAngMatch = [re.match(mtchPtrn, line) for line in header]
   assert np.any(scatAngMatch), 'Scattering angles could not be parsed in header of scattering matrix element files.'
   scatAngLn = np.nonzero(scatAngMatch)[0][0] # line number with scattering angle header (e.g., ' 181   number of scattering angles')
