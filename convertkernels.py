@@ -14,7 +14,7 @@ def fun(ifn, dest):
   path = data['path'] # path to the kernel files to be read in
   fnpre = data['fnpre'] # filename preface of kernels to be read in (e.g. "Rkernel1")
   ratios = data['ratios'] # list of kernel shape id's to use (axis ratios for spheroids)
-  contlen = data['contlen'] # number of lines per ext/abs block in 00 kernels files (i.e., number of lines between a given "element, ratio" and the next "element, ratio")
+  contlen = data['contlen'] # number of lines per ext+abs block in 00 kernels files (i.e., number of lines between a given "element, ratio" and the next "element, ratio")
   mrlen = data['mrlen'] # number of real refractive indices
   milen = data['milen'] # number of imaginary refractive indices
   scathdrlen = data['scathdrlen'] # number of lines in scattering element file headers
@@ -136,7 +136,7 @@ def fun(ifn, dest):
     ncdf.createDimension('mi', len(mi))
     ncdf.createDimension('x', len(x))
     ncdf.createDimension('angle', len(angs))
-    ncdf.createDimension('scattering_element', len(elems))
+    ncdf.createDimension('scattering_element_index', len(elems))
 
     # Create 1D variables
     usezlib = False
@@ -151,11 +151,11 @@ def fun(ifn, dest):
     ncdf.createVariable('angle', 'f8', ('angle'), zlib=usezlib)
     ncdf.variables['angle'].long_name = 'scattering angle'
     ncdf.variables['angle'].units = 'degree'
-    ncdf.createVariable('scattering_element', 'u1', ('scattering_element'), zlib=usezlib)
+    ncdf.createVariable('scattering_element_index', 'u1', ('scattering_element_index'), zlib=usezlib)
 
     # Create Multidimensional variables
     scalarelems = ('ratio', 'mr', 'mi', 'x')
-    scatelems = ('ratio', 'mr', 'mi', 'x', 'scattering_element', 'angle')
+    scatelems = ('ratio', 'mr', 'mi', 'x', 'scattering_element_index', 'angle')
     desc = "This is extinction cross section per unit of particle volume.\
        Alternatively, the extinction coefficient for a volume concentration of unity.\
        ext * ρ = βext where ρ is particle density and βext is mass extinction efficiency."
@@ -172,7 +172,7 @@ def fun(ifn, dest):
     nc4VarSetup(ncdf, 'lidar_ratio', '1/sr', scalarelems, 'lidar ratio')
     nc4VarSetup(ncdf, 'g', 'none', scalarelems, 'asymmetry parameter')
     desc = 'Normalized such that p11(θ)*sin(θ)*dθ intgrated from 0 to π equals 2.'
-    nc4VarSetup(ncdf, 'scama', '1/sr', scatelems, 'scattering matrix elements', desc=desc)
+    nc4VarSetup(ncdf, 'scama', '1/sr', scatelems, 'scattering matrix element values', desc=desc)
 
     # Write data to variables
     ncdf.variables['x'][:] = x
@@ -180,7 +180,7 @@ def fun(ifn, dest):
     ncdf.variables['mr'][:] = mr
     ncdf.variables['mi'][:] = mi
     ncdf.variables['angle'][:] = angs
-    ncdf.variables['scattering_element'][:] = [int(el) for el in elems]
+    ncdf.variables['scattering_element_index'][:] = [int(el) for el in elems]
     ncdf.variables['ext'][:,:,:,:] = ext
     ncdf.variables['abs'][:,:,:,:] = abso
     ncdf.variables['sca'][:,:,:,:] = sca
@@ -260,7 +260,7 @@ def readScaAngles(pfx, ratio, fnpre, hdrlen):
     header = [next(fp) for _ in range(hdrlen)]
     header = [line.rstrip() for line in header]
     
-  mtchPtrn = '[ ]*([0-9]+)[ ]*number of (?:scattering )?angles'
+  mtchPtrn = '[ \t]*([0-9]+)[ ]*number of (?:scattering )?angles'
   scatAngMatch = [re.match(mtchPtrn, line) for line in header]
   assert np.any(scatAngMatch), 'Scattering angles could not be parsed in header of scattering matrix element files.'
   scatAngLn = np.nonzero(scatAngMatch)[0][0] # line number with scattering angle header (e.g., ' 181   number of scattering angles')

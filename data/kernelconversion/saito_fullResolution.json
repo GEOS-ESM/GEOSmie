@@ -1,16 +1,16 @@
 {
-    "name": "Saito-Hexahedra_psi0.7_variable-dtheta_V4",
+    "name": "Saito-Hexahedra_psi0.7_fullAngRes_V4",
     "path": "/Users/wrespino/Synced/NIP_Morphology_Polarimetry/TAMUdust2020_kernels/TAMUdust2020-in-GRASP-kernel-format_withVariableAngleRes-2024",
     "fnpre": "kernels",
     "ratios": ["299"],
-    "contlen": 1,
+    "contlen": 6,
     "mrlen": 8,
     "milen": 31,
     "scathdrlen": 56,
     "scatcontlen": 275,
-    "elems": ["11", "22", "33", "44", "12", "43"],
+    "elems": ["11", "22", "33", "44", "12", "34"],
     "scatelemlen": 1,
-    "renormUpperX": 0,
+    "renormUpperX": 0.1,
     "angFwdPeak": 0,
     "kernelScaleFact": 1 
 }
