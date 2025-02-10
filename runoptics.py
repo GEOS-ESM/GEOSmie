@@ -5,7 +5,7 @@
  Top-level caller for optics table generation code
  Usage example:
   runoptics.py --name bc.json
- will produce an output file named "integ-bc-raw.nc"
+ will produce an output file named "optics_bc.geosmie.nc"
 
   runoptics -h
  will print a usage message
@@ -45,6 +45,10 @@ if __name__ == "__main__":
   parser.add_option("--dest", dest="dest", default=".", 
               help="Output directory to use (default=%s)"\
                           %("."))
+
+  parser.add_option("-c","--classic",
+                    action="store_true", dest="classic", default=False,
+                    help="write output filename is legacy dimensioning")
 
   # TODO! add flag for running bands either in combination or separately
   # so like mode = [scatonly, bandsonly, both]
@@ -94,7 +98,7 @@ if __name__ == "__main__":
     particlename = fn.split('/')[-1].replace(".json", "")
 
     # Perform the requested calculation/integrations
-    dointegration.fun(fn, options.datatype, options.dest)
+    dointegration.fun(fn, options.datatype, options.dest, options.classic)
 
     # Special handling based on key "hydrophobic" in configuration
     # This handling implies a full (hydrophilic) calculation at all
@@ -102,14 +106,17 @@ if __name__ == "__main__":
     # values are propagated as an additional bin valid at all RH 
     # that is prepended to the results of the initial hydrophilic 
     # calculation
-    opfn = "integ-%s-raw.nc"%particlename
+    if options.classic:
+      opfn = "optics_%s.geosmie.legacy.nc"%particlename
+    else:
+      opfn = "optics_%s.geosmie.nc"%particlename
     if "hydrophobic" in params and params["hydrophobic"]:
       # rename non-HP file 
       fn2 = "%s.nohp"%opfn
       shutil.move(os.path.join(options.dest, opfn), os.path.join(options.dest, fn2))
       # run the hydrophobic code
       print("Starting hydrophobic bin handling")
-      hydrophobic.doConversion(fn2, opfn, options.dest)
+      hydrophobic.doConversion(fn2, opfn, options.dest, options.classic)
       # remove the temp file (fn2)
       os.remove(os.path.join(options.dest, fn2))
 
