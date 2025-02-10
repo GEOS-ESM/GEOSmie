@@ -129,10 +129,20 @@ def fun(data, part, opfn, mode, useSolar, noIR):
     solardata = read_solar_flux(True)
   #print(data.variables.keys())
 
-  lam = data.variables['wavelength'][:]
+  try:
+    lam = data.variables['wavelength'][:]
+    oppclassic = False
+    radiusNm = 'bin'
+    lamNm = 'wavelength'
+  except:
+    lamNm = 'lambda'
+    lam = data.variables[lamNm][:]
+    oppclassic = True
+    radiusNm = 'radius'
+    print("Operating on a legacy file")
   rh = data.variables['rh'][:]
   reff = data.variables['rEff'][:]
-  radius = data.variables['bin'][:]
+  radius = data.variables[radiusNm][:]
 
   lBandLow, lBandUp, bandMeanM, useWavenum, nbands = getBands(mode)
 
@@ -145,27 +155,42 @@ def fun(data, part, opfn, mode, useSolar, noIR):
   varsToAverage = ['qsca', 'qext', 'bsca', 'bext', 'g', 'bbck', 'refreal', 'refimag']
 
   for varName in varsToAverage:
-    output[varName] = np.zeros([nbin, nbands_orig, nrh])
+    if oppclassic:
+      output[varName] = np.zeros([nbin, nrh, nbands_orig])
+    else:
+      output[varName] = np.zeros([nbin, nbands_orig, nrh])
 
   for irh in range(0, nrh):
     for ilam in range(0, nbands_orig):
       for ibin in range(0, nbin):
         # average each key quantity here...
         for varName in varsToAverage:
-          varIn = data.variables[varName][ibin,:,irh]
+          if oppclassic:
+            varIn = data.variables[varName][ibin,irh,:]
+          else:
+            varIn = data.variables[varName][ibin,:,irh]
           ret = doAverage(lam, varIn, lBandLow[ilam], lBandUp[ilam], useWavenum, useSolar)
 
           # save to output
-          output[varName][ibin, ilam, irh] = ret
+          if oppclassic:
+            output[varName][ibin, irh, ilam] = ret
+          else:
+            output[varName][ibin, ilam, irh] = ret
 
 
   # if noIR then set IR band values to zero/epsilon
   if(noIR and mode == 'GEOS5'):
     ind = np.where(lBandLow > 3e-6)
-    output['qsca'][:, ind, :] = 0
-    output['bsca'][:, ind, :] = 0
-    output['qext'][:, ind, :] = 1e-32
-    output['bext'][:, ind, :] = 1e-32
+    if oppclassic:
+      output['qsca'][:, :, ind] = 0
+      output['bsca'][:, :, ind] = 0
+      output['qext'][:, :, ind] = 1e-32
+      output['bext'][:, :, ind] = 1e-32
+    else:
+      output['qsca'][:, ind, :] = 0
+      output['bsca'][:, ind, :] = 0
+      output['qext'][:, ind, :] = 1e-32
+      output['bext'][:, ind, :] = 1e-32
 
   # TODO! 
   # if mode == tGEOS5 we need to average bands 0 and 2 together and set that as
@@ -179,24 +204,33 @@ def fun(data, part, opfn, mode, useSolar, noIR):
       # this weighing needs to be done in wavelength space
       bw1 = lBandUp[0] - lBandLow[0]
       bw2 = lBandUp[2] - lBandLow[2]
-      avg = (bw1 * val[:, 0, :] + bw2 * val[:, 2, :]) / (bw1 + bw2)
-      
-      # assign the average to index 2
-      val[:, 2, :] = avg
+      if oppclassic:
+        avg = (bw1 * val[:, :, 0] + bw2 * val[:, :, 2]) / (bw1 + bw2)
+        # assign the average to index 2
+        val[:, :, 2] = avg
+        # drop the index 0 and assign back to the ret dict
+        output[key] = val[:, :, 1:]
+      else:
+        avg = (bw1 * val[:, 0, :] + bw2 * val[:, 2, :]) / (bw1 + bw2)
+        # assign the average to index 2
+        val[:, 2, :] = avg
+        # drop the index 0 and assign back to the ret dict
+        output[key] = val[:, 1:, :]
 
-      # drop the index 0 and assign back to the ret dict
-      output[key] = val[:, 1:, :]
       bandMeanM = bandMeanM[1:]
 
   opncdf = nc.Dataset(opfn, 'w')
   # create dimensions
   opncdf.createDimension('rh',nrh)
-  opncdf.createDimension('wavelength',nbands)
-  opncdf.createDimension('bin',nbin)
+  opncdf.createDimension(lamNm,nbands)
+  opncdf.createDimension(radiusNm,nbin)
   nchar = 80
   opncdf.createDimension('nchar',nchar)
   for varName in output.keys():
-    opncdf.createVariable(varName, 'f8', ('bin', 'wavelength', 'rh'), compression='zlib')
+    if oppclassic:
+      opncdf.createVariable(varName, 'f8', (radiusNm, 'rh', lamNm), compression='zlib')
+    else:
+      opncdf.createVariable(varName, 'f8', (radiusNm, lamNm, 'rh'), compression='zlib')
     #print(opncdf.variables[varName].shape)
     #print(output[varName].shape)
     #print(opncdf.variables[varName][:].shape)
@@ -204,13 +238,13 @@ def fun(data, part, opfn, mode, useSolar, noIR):
     opncdf.variables[varName][:] = output[varName]
 
   # special variables: lambda, rh, qname
-  opncdf.createVariable('wavelength', 'f8', ('wavelength'))
-  opncdf.variables['wavelength'][:] = bandMeanM
+  opncdf.createVariable(lamNm, 'f8', (lamNm))
+  opncdf.variables[lamNm][:] = bandMeanM
 
   opncdf.createVariable('rh', 'f8', ('rh'))
   opncdf.variables['rh'][:] = data.variables['rh'][:]
 
-  opncdf.createVariable('qname', 'c', ('bin', 'nchar'))
+  opncdf.createVariable('qname', 'c', (radiusNm, 'nchar'))
   qname = ['%s%03d'%(part, i) for i in range(1, len(radius)+1)]
 
   # add low and high limit information for bands
@@ -225,12 +259,12 @@ def fun(data, part, opfn, mode, useSolar, noIR):
     lBandLow = lBandLow0
   lBandLow = lBandLow * 1e6
   lBandUp = lBandUp * 1e6
-  opncdf.createVariable('bandLow', 'f8', ('wavelength'))
+  opncdf.createVariable('bandLow', 'f8', (lamNm))
   opncdf.variables['bandLow'][:] = lBandLow
   opncdf.variables['bandLow'].long_name = 'Lower edges of the bands'
   opncdf.variables['bandLow'].units = 'micrometers'
 
-  opncdf.createVariable('bandUp', 'f8', ('wavelength'))
+  opncdf.createVariable('bandUp', 'f8', (lamNm))
   opncdf.variables['bandUp'][:] = lBandLow
   opncdf.variables['bandUp'].long_name = 'Upper edges of the bands'
   opncdf.variables['bandUp'].units = 'micrometers'
@@ -240,21 +274,21 @@ def fun(data, part, opfn, mode, useSolar, noIR):
     for ci, char in enumerate(qq):
       opncdf.variables['qname'][qi, ci] = char
 
-  radvars = ['bin']
+  radvars = [radiusNm]
   for var in radvars:
-    opncdf.createVariable(var, 'f8', ('bin'))
+    opncdf.createVariable(var, 'f8', (radiusNm))
     opncdf.variables[var][:] = data.variables[var][:]
 
   radvars2 = ['rLow', 'rUp']
   # need to drop rh dimension for these variables
   for var in radvars2:
-    opncdf.createVariable(var, 'f8', ('bin'))
+    opncdf.createVariable(var, 'f8', (radiusNm))
     opncdf.variables[var][:] = data.variables[var][:, 0]
 
   # variables that have dimensions radius, rh (rEff, rMass)
   radrhvars = ['rEff', 'rMass']
   for var in radrhvars:
-    opncdf.createVariable(var, 'f8', ('bin', 'rh'))
+    opncdf.createVariable(var, 'f8', (radiusNm, 'rh'))
     opncdf.variables[var][:] = data.variables[var][:]
 
   opncdf.close()

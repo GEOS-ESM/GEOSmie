@@ -202,21 +202,31 @@ def find_closest_ind(myList, myNumber, typ='none',ide=''):
       return pos - 1
 
 
-def createNCDF(ncdfID, oppfx, rarr, rharr, lambarr, ang):
-  ncdf = netCDF4.Dataset(os.path.join(oppfx, 'integ-%s.nc'%ncdfID), 'w')
+def createNCDF(ncdfID, oppfx, rarr, rharr, lambarr, ang, oppclassic):
+
+  if oppclassic:
+    ncdf = netCDF4.Dataset(os.path.join(oppfx, 'optics_%s.geosmie.legacy.nc'%ncdfID), 'w')
+    radiusNm = 'radius'
+    lambdaNm = 'lambda'
+    npolNm   = 'nPol'
+  else:
+    ncdf = netCDF4.Dataset(os.path.join(oppfx, 'optics_%s.geosmie.nc'%ncdfID), 'w')
+    radiusNm = 'bin'
+    lambdaNm = 'wavelength'
+    npolNm   = 'p'
 
   idRh     = ncdf.createDimension('rh', len(rharr))
-  idLambda = ncdf.createDimension('wavelength', len(lambarr))
-  idBin    = ncdf.createDimension('bin', len(rarr))
-  idNpol   = ncdf.createDimension('p', 6)
+  idLambda = ncdf.createDimension(lambdaNm, len(lambarr))
+  idBin    = ncdf.createDimension(radiusNm, len(rarr))
+  idNpol   = ncdf.createDimension(npolNm, 6)
   idAng    = ncdf.createDimension('ang', len(ang))
 
   vardict = {} # holds all the variable metadata
-  vardict['bin'] = {'units': 'dimensionless', \
+  vardict[radiusNm] = {'units': 'dimensionless', \
   'long_name': 'radius bin index (1-indexed)'
   }
 
-  vardict['p'] = {'units': 'dimensionless', \
+  vardict[npolNm] = {'units': 'dimensionless', \
   'long_name': 'Scattering matrix element index, ordered as P11, P12, P33, P34, P22, P44' 
   }
 
@@ -224,7 +234,7 @@ def createNCDF(ncdfID, oppfx, rarr, rharr, lambarr, ang):
   'long_name': 'relative humidity' 
   }
    
-  vardict['wavelength'] = {'units': 'm', \
+  vardict[lambdaNm] = {'units': 'm', \
   'long_name': 'wavelength' 
   }
 
@@ -325,13 +335,13 @@ def createNCDF(ncdfID, oppfx, rarr, rharr, lambarr, ang):
   }
 
   idRH     = ncdf.createVariable('rh', 'f8', ('rh'), compression='zlib')
-  idLambda = ncdf.createVariable('wavelength', 'f8', ('wavelength'), compression='zlib')
-  idR      = ncdf.createVariable('bin', 'i8', ('bin'), compression='zlib')
-  idNpol   = ncdf.createVariable('p', 'i8', ('p'), compression='zlib')
+  idLambda = ncdf.createVariable(lambdaNm, 'f8', (lambdaNm), compression='zlib')
+  idR      = ncdf.createVariable(radiusNm, 'i8', (radiusNm), compression='zlib')
+  idNpol   = ncdf.createVariable(npolNm, 'i8', (npolNm), compression='zlib')
   idAng    = ncdf.createVariable('ang', 'f8', ('ang'), compression='zlib')
 
   # use list for easier looping
-  dimvars = ['bin', 'rh', 'wavelength', 'ang', 'p']
+  dimvars = [radiusNm, 'rh', lambdaNm, 'ang', npolNm]
   for var in dimvars:
     ncdf.variables[var].long_name = vardict[var]['long_name']
     ncdf.variables[var].units = vardict[var]['units']
@@ -343,13 +353,22 @@ def createNCDF(ncdfID, oppfx, rarr, rharr, lambarr, ang):
   idAng[:] = ang
   idNpol[:] = [11,12,33,34,22,44]
 
-  ncdfDimensionTypes = {\
-                        "scalarScattering": ("bin", "wavelength", "rh"),\
-  "noLambdaScalarScattering": ("bin", "rh"),\
-  "scatteringFun": ("bin", "wavelength", "rh", "ang"),\
-  "elementScattering": ("bin", "wavelength", "rh", "p"),\
-  "scalarVals": ("bin"),\
-  }
+  if oppclassic:
+    ncdfDimensionTypes = {\
+                          "scalarScattering": (radiusNm, "rh", lambdaNm),\
+                          "noLambdaScalarScattering": (radiusNm, "rh"),\
+                          "scatteringFun": (radiusNm, "rh", lambdaNm, "ang"),\
+                          "elementScattering": (npolNm, radiusNm, "rh", lambdaNm),\
+                          "scalarVals": (radiusNm),\
+                          }
+  else:
+    ncdfDimensionTypes = {\
+                          "scalarScattering": (radiusNm, lambdaNm, "rh"),\
+                          "noLambdaScalarScattering": (radiusNm, "rh"),\
+                          "scatteringFun": (radiusNm, lambdaNm, "rh", "ang"),\
+                          "elementScattering": (radiusNm, lambdaNm, "rh", "p"),\
+                          "scalarVals": (radiusNm),\
+                          }
 
   # for each NetCDF variable, assign one dimension type based on the dimension types dictionary
   ncdfVariableDimensionTypes = {\
@@ -442,19 +461,33 @@ def initializeXarr(params, radind, minlam, maxlam):
     
   return xxarr, drarr
     
-def copyDryValues(opncdf, allkeys, scatkeys, elekeys, extrakeys, nlscalarkeys, radind, rhi, li):
-  for key in allkeys: 
-    if key in scatkeys:
-      opncdf.variables[key][radind, li, rhi, :] = opncdf.variables[key][radind, li, 0, :]
-    elif key in elekeys:
-      opncdf.variables[key][radind, li, rhi, :] = opncdf.variables[key][radind, li, 0, :]
-    elif key in scalarkeys + extrakeys:
-      opncdf.variables[key][radind, li, rhi] = opncdf.variables[key][radind, li, 0]
-    elif key in nlscalarkeys:
-      opncdf.variables[key][radind, rhi] = opncdf.variables[key][radind, 0]
-    else:
-      print("key category missing: %s"%key)
-      sys.exit()
+def copyDryValues(opncdf, allkeys, scatkeys, elekeys, extrakeys, nlscalarkeys, radind, rhi, li, oppclassic):
+  if oppclassic:
+    for key in allkeys: 
+      if key in scatkeys:
+        opncdf.variables[key][radind, rhi, li, :] = opncdf.variables[key][radind, 0, li, :]
+      elif key in elekeys:
+        opncdf.variables[key][:, radind, rhi, li] = opncdf.variables[key][:, radind, 0, li]
+      elif key in scalarkeys + extrakeys:
+        opncdf.variables[key][radind, rhi, li] = opncdf.variables[key][radind, 0, li]
+      elif key in nlscalarkeys:
+        opncdf.variables[key][radind, rhi] = opncdf.variables[key][radind, 0]
+      else:
+        print("key category missing: %s"%key)
+        sys.exit()
+  else:
+    for key in allkeys: 
+      if key in scatkeys:
+        opncdf.variables[key][radind, li, rhi, :] = opncdf.variables[key][radind, li, 0, :]
+      elif key in elekeys:
+        opncdf.variables[key][radind, li, rhi, :] = opncdf.variables[key][radind, li, 0, :]
+      elif key in scalarkeys + extrakeys:
+        opncdf.variables[key][radind, li, rhi] = opncdf.variables[key][radind, li, 0]
+      elif key in nlscalarkeys:
+        opncdf.variables[key][radind, rhi] = opncdf.variables[key][radind, 0]
+      else:
+        print("key category missing: %s"%key)
+        sys.exit()
 
 def getHumidRefractiveIndex(params, radind, rhi, rh, nref0, nrefwater):
   psdtype = params['psd']['type']
@@ -516,6 +549,8 @@ def calculatePSD(params, radind, onerh, rh, xxarr, drarr, rrat, lam):
     fracs = pparam['fracs']
     psd = []
     ref = []
+#    print(rmodes)
+#    sys.exit()
     for psdi in range(len(rmodes)):
       thispsd = pp.getLogNormPSD(xxarr, rmodes[psdi], rmaxs[psdi], rmins[psdi], sigmas[psdi], lam)
       psdbins = drarr
@@ -615,17 +650,18 @@ def calculatePSD(params, radind, onerh, rh, xxarr, drarr, rrat, lam):
 
 # This is the main integration function called from runoptics.py
 # Inputs are:
-#  partID0:  the particle type JSON file header or filename, e.g., bc, oc, ...
-#  datatype: the type of the file to be parsed, must be JSON presently
-#  oppfx:    the path for the output file
-def fun(partID0, datatype, oppfx):
+#  partID0:    the particle type JSON file header or filename, e.g., bc, oc, ...
+#  datatype:   the type of the file to be parsed, must be JSON presently
+#  oppfx:      the path for the output file
+#  oppclassic: generate legacy format lookup table
+def fun(partID0, datatype, oppfx, oppclassic):
 
   # clean up partID, reduce just to particle type (e.g., bc, oc, ...)
   partID = partID0.split('/')[-1].replace(".json", "")
 
   print("\n ####################\n Starting case %s\n ####################\n"%partID)
 
-  ncdfID = '%s-raw'%partID
+  ncdfID = '%s'%partID
   if '-orig' in partID:
     partID2 = partID0.replace('-orig', '')
   else:
@@ -637,9 +673,10 @@ def fun(partID0, datatype, oppfx):
   # or using GRASP-like kernel files. Code does not presently include
   # any alternative internal calculations to Mie.
   mode = 'mie'
-  if 'shape' in params:
-    mode = params['shape']
-  if mode == 'spheroid' or mode == 'spheroid_sphere':
+  if 'mode' in params:
+    mode = params['mode']
+#  if mode == 'spheroid' or mode == 'spheroid_sphere':
+  if mode == 'kernel':
     useGrasp = True
   elif mode == 'mie':
     useGrasp = False
@@ -696,7 +733,7 @@ def fun(partID0, datatype, oppfx):
   minlam = lambarr[0]
   maxlam = lambarr[-1]
 
-  opncdf = createNCDF(ncdfID, oppfx, radiusarr, rh, lambarr, ang[:])
+  opncdf = createNCDF(ncdfID, oppfx, radiusarr, rh, lambarr, ang[:], oppclassic)
 
   if useGrasp:
     # if we are using a spheroid kernel system then override xxarr with
@@ -782,7 +819,7 @@ def fun(partID0, datatype, oppfx):
         rparams = params['rhDep']
 
         if params['rhDep']['type'] == 'trivial' and rhi > 0: # same values for all rh, save in computation
-          copyDryValues(opncdf, allkeys, scatkeys, elekeys, extrakeys, nlscalarkeys, radind, rhi, li)
+          copyDryValues(opncdf, allkeys, scatkeys, elekeys, extrakeys, nlscalarkeys, radind, rhi, li, oppclassic)
           continue
 
         mr, mi, gf, rrat = getHumidRefractiveIndex(params, radind, rhi, rh, nref0, nrefwater)
@@ -827,6 +864,7 @@ def fun(partID0, datatype, oppfx):
           allmi = -ret0['mi'][:] # change sign
 
           keys = ['ext', 'abs', 'sca', 'qext', 'qabs', 'qsca', 'qb', 'g', 'cext', 'csca', 'cabs']
+#          keys = ['ext', 'abs', 'sca', 'qext', 'qsca', 'qb', 'g', 'cext', 'csca']
           scatelekeys = ['scama']
           scatelems = ['s11', 's22', 's33', 's44', 's12', 's34'] # order Mischenko's code expects
           ret1 = {}
@@ -893,19 +931,35 @@ def fun(partID0, datatype, oppfx):
 #        print(rh[rhi],mr, mi, qext, qsca, g, qb*np.pi)
 #        print(rh[rhi],ref,rLow, rUp)
 
-        for key in allkeys: # we can also save to allvals and write later
-          if key in scatkeys:
-            iii += 1
-            opncdf.variables[key][radind, li, rhi, :] = ret[key][:]
-          elif key in elekeys:
-            opncdf.variables[key][radind, li, rhi, :] = ret[key][:]
-          elif key in scalarkeys + extrakeys:
-            opncdf.variables[key][radind, li, rhi] = ret[key]
-          elif key in nlscalarkeys:
-            opncdf.variables[key][radind, rhi] = ret[key]
-          else:
-            print("key category missing: %s"%key)
-            sys.exit()
+#       Support for legacy format lookup tables
+        if oppclassic:
+          for key in allkeys: # we can also save to allvals and write later
+            if key in scatkeys:
+              iii += 1
+              opncdf.variables[key][radind, rhi, li, :] = ret[key][:]
+            elif key in elekeys:
+              opncdf.variables[key][:, radind, rhi, li] = ret[key][:]
+            elif key in scalarkeys + extrakeys:
+              opncdf.variables[key][radind, rhi, li] = ret[key]
+            elif key in nlscalarkeys:
+              opncdf.variables[key][radind, rhi] = ret[key]
+            else:
+              print("key category missing: %s"%key)
+              sys.exit()
+        else:
+          for key in allkeys: # we can also save to allvals and write later
+            if key in scatkeys:
+              iii += 1
+              opncdf.variables[key][radind, li, rhi, :] = ret[key][:]
+            elif key in elekeys:
+              opncdf.variables[key][radind, li, rhi, :] = ret[key][:]
+            elif key in scalarkeys + extrakeys:
+              opncdf.variables[key][radind, li, rhi] = ret[key]
+            elif key in nlscalarkeys:
+              opncdf.variables[key][radind, rhi] = ret[key]
+            else:
+              print("key category missing: %s"%key)
+              sys.exit()
         # end rh loop
       # end lambda loop
     # end radind loop
