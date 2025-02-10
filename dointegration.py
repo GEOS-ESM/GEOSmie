@@ -168,7 +168,7 @@ def getMMPSD(xxArr, rmodeArr, rMaxArr, rMinArr, sigmaArr, lambd, fracarr):
   totfrac = np.sum(fracarr)
   totdist = np.zeros_like(xxArr)
   for ii, rMode in enumerate(rmodeArr):
-    thisdist = pp.getLogNormPSD(xxArr, rMode, rMaxArr[ii], rMinArr[ii], sigmaArr[ii], lambd)
+    thisdist = pp.getLogNormPSD(rMode, sigmaArr[ii], xxArr, lambd, rMaxArr[ii], rMinArr[ii])
     totdist += fracarr[ii] * thisdist
   totdist /= totfrac
   return totdist
@@ -549,15 +549,15 @@ def calculatePSD(params, radind, onerh, rh, xxarr, drarr, rrat, lam):
     fracs = pparam['fracs']
     psd = []
     ref = []
-#    print(rmodes)
-#    sys.exit()
     for psdi in range(len(rmodes)):
-      thispsd = pp.getLogNormPSD(xxarr, rmodes[psdi], rmaxs[psdi], rmins[psdi], sigmas[psdi], lam)
+#     This call returns PSD as dN/dr
+      thispsd = pp.getLogNormPSD(rmodes[psdi], sigmas[psdi], xxarr, lam, rmaxs[psdi], rmins[psdi])
       psdbins = drarr
 
       dr = psdbins
       dndr = thispsd / np.sum(thispsd)
-      
+
+#     Following converts PSD to dN      
       thispsd *= psdbins 
       thispsd /= np.sum(thispsd)
 
@@ -756,7 +756,15 @@ def fun(partID0, datatype, oppfx, oppclassic):
     print('Done')
 
     xxarr = spdata.variables['x'][:]
-    drarr = getDR(xxarr) 
+    # Original call to getDR below, but for our kernel files to date
+    # there is a simple geometric progression in size space; i.e., 
+    # x1 = rat*x0, x2 = rat*x1, ...
+    # and so more accurately r/dr is constant. In CARMA land I reproduce
+    # some of the functionality here to get this accurate.
+    # drarr = getDR(xxarr) 
+    rmrat = (xxarr[1]/xxarr[0])**3
+    vrfact = ( (3./2./np.pi / (rmrat+1))**(1./3.))*(rmrat**(1./3.) - 1.)
+    drarr  = vrfact*(4./3.*np.pi*xxarr**3.)**(1./3.)
 
   # Loop over the particle size bins/modes
   for radind in radindarr:
@@ -764,6 +772,9 @@ def fun(partID0, datatype, oppfx, oppclassic):
 
     if not useGrasp:
       xxarr, drarr = initializeXarr(params, radind, minlam, maxlam)
+    else:
+      # Get a nominal size array like you are not using GRASP for later
+      xxarr_, drarr_ = initializeXarr(params, radind, minlam, maxlam)
 
     if mode == 'mie':
       multipleMie = MultipleMie(xxarr, None, costarr)
@@ -774,13 +785,12 @@ def fun(partID0, datatype, oppfx, oppclassic):
       allvals[key] = np.zeros(opncdf.variables[key][:].shape)
 
     """
+    Start wavelength loop
     TODO!
     parallelization over lambda, i.e. have a single worker evaluate each lambda since they are independent of each other
     therefore, we should move this huge block of code under the loop into a separate function that takes lambda as a 
     parameter along with everything else it needs
     """
-
-    iii = 0
     for li, lam in enumerate(lambarr):
       print("+++++ LAMBDA %.2e +++++"%lam)
       mr0 = [partMr[i](lam) for i in range(len(partMr))]
@@ -825,6 +835,7 @@ def fun(partID0, datatype, oppfx, oppclassic):
         mr, mi, gf, rrat = getHumidRefractiveIndex(params, radind, rhi, rh, nref0, nrefwater)
 
         psd, ref, rLow, rUp = calculatePSD(params, radind, onerh, rh, xxarr, drarr, rrat, lam)
+        psd_, ref_, rLow_, rUp_ = calculatePSD(params, radind, onerh, rh, xxarr_, drarr_, rrat, lam)
 
         """
         ***********
@@ -853,6 +864,8 @@ def fun(partID0, datatype, oppfx, oppclassic):
           if len(allret) == 1:
             # make compatible with multibin psd
             allret = [allret[0] for i in range(len(psd))] # multibin
+
+          retkeys = list(allret[0].keys()) # all are assumed to have the identical keys so we just get them from 0th index
 
           # separate integration step
           ret = integratePSD(multipleMie.xArr, allret, psd, pparam['fracs'][radind], lam, reff_mass0, rhop0, rhop)
@@ -891,10 +904,27 @@ def fun(partID0, datatype, oppfx, oppclassic):
           ret1 = [ret1 for i in range(len(psd))] # multibin
           if len(pparam['fracs']) == 1:
             # if only one set of fracs is given we always use it
-            usefracs = pparam['fracs'][0]
+            fracs = pparam['fracs'][0]
           else:
-            usefracs = pparam['fracs'][radind]
-          ret = integratePSD(xxarr, ret1, psd, usefracs, lam, reff_mass0, rhop0, rhop)
+            fracs = pparam['fracs'][radind]
+          retkeys = list(ret1[0].keys()) # all are assumed to have the identical keys so we just get them from 0th index
+          ret = integratePSD(xxarr, ret1, psd, fracs, lam, reff_mass0, rhop0, rhop)
+          # Post integration rescaling of the mass efficiencies because of limited resolution of kernel tables
+          # introducing error in effective radius calculation
+          # Note: this could be done more generally for number, volume, etc that should not vary with wavelength
+          # For no keep it simple and fix the extinction efficiencies
+          rrarr = xxarr_ * lam / (2. * np.pi)
+          for fraci, frac in enumerate(fracs):
+            rarr2 = rrarr ** 2. * psd_[fraci]
+            rarr3 = rrarr ** 3. * psd_[fraci]
+            reff = np.sum(rarr3) / np.sum(rarr2)
+            massConversion = 1. / rhop / ret['rEff'] * ret['rMass'] / reff_mass0
+
+            ret['bsca'] = ret['bsca'] * ret['rEff']/reff
+            ret['bext'] = ret['bext'] * ret['rEff']/reff
+            ret['bbck'] = ret['bbck'] * ret['rEff']/reff
+            ret['rEff'] = reff
+
 
         qsca = np.array(ret['qsca'])
         qext = np.array(ret['qext'])
@@ -928,14 +958,11 @@ def fun(partID0, datatype, oppfx, oppclassic):
         ret['refimag'] = -np.abs(mi[0]) # force negative to be consistent with Pete's tables
 
         pback = np.array(ret['pback'])
-#        print(rh[rhi],mr, mi, qext, qsca, g, qb*np.pi)
-#        print(rh[rhi],ref,rLow, rUp)
 
 #       Support for legacy format lookup tables
         if oppclassic:
           for key in allkeys: # we can also save to allvals and write later
             if key in scatkeys:
-              iii += 1
               opncdf.variables[key][radind, rhi, li, :] = ret[key][:]
             elif key in elekeys:
               opncdf.variables[key][:, radind, rhi, li] = ret[key][:]
@@ -949,7 +976,6 @@ def fun(partID0, datatype, oppfx, oppclassic):
         else:
           for key in allkeys: # we can also save to allvals and write later
             if key in scatkeys:
-              iii += 1
               opncdf.variables[key][radind, li, rhi, :] = ret[key][:]
             elif key in elekeys:
               opncdf.variables[key][radind, li, rhi, :] = ret[key][:]
@@ -1080,12 +1106,16 @@ def integratePSD(xxarr, rawret, psd, fracs, lam, reff0, rhop0, rhop):
 #        print(thisp11)
 #        exit()
 
+#     PRC: The following seems dangerous as it resets "thisweight" and
+#     seems it would be bad if the order of the keys changed
       qscawe = ['g']
 
       if key in qscawe:
         thisweight *= rawret[fraci]['qsca'] # scale also by qext
 
+#     PRC: this seems is consisent with how "thisarea" is modified above
       sumarea = np.sum(psd[fraci] * thisweight)
+#     PRC: WTF, this accumulates over the loop of keys and seems totally wrong!
       totarea += frac * sumarea
       
       if key in scatkeys:
@@ -1116,7 +1146,6 @@ def integratePSD(xxarr, rawret, psd, fracs, lam, reff0, rhop0, rhop):
         elif mixing == 'dumix':
           thisint = np.dot(thisvals, psd[fraci] * thisweight)
           thisret[key] = thisint / sumarea
-#          print(key, np.sum(psd[fraci] * thisweight), sumarea, thisret[key])
 
     # calculate mass efficiencies here
     massConversion = 1. / rhop / thisret['rEff'] * thisret['rMass'] / rMass0
