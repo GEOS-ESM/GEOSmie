@@ -835,7 +835,8 @@ def fun(partID0, datatype, oppfx, oppclassic):
         mr, mi, gf, rrat = getHumidRefractiveIndex(params, radind, rhi, rh, nref0, nrefwater)
 
         psd, ref, rLow, rUp = calculatePSD(params, radind, onerh, rh, xxarr, drarr, rrat, lam)
-        psd_, ref_, rLow_, rUp_ = calculatePSD(params, radind, onerh, rh, xxarr_, drarr_, rrat, lam)
+        if useGrasp:
+          psd_, ref_, rLow_, rUp_ = calculatePSD(params, radind, onerh, rh, xxarr_, drarr_, rrat, lam)
 
         """
         ***********
