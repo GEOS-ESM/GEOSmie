@@ -454,9 +454,10 @@ def initializeXarr(params, radind, minlam, maxlam):
     drarr2 = getDR(xxarr)
     drrat = drarr / drarr2
   elif psdtype == 'du':
-    minx = pparam['rMinMaj'][radind][0] * 2 * np.pi / maxlam 
+    minx = pparam['rMinMaj'][radind][0] * 2 * np.pi / maxlam
     maxx = pparam['rMaxMaj'][radind][-1] * 2 * np.pi / minlam
-    xxarr = np.linspace(minx, maxx, 1000) # small size range for testing
+    # Try a logarithmic spacing
+    xxarr = (np.linspace(np.log10(minx), np.log10(maxx), 1000))**10.
     drarr = None # not used for dust since it's overwritten by GRASP values
     
   return xxarr, drarr
@@ -531,7 +532,7 @@ def calculatePSD(params, radind, onerh, rh, xxarr, drarr, rrat, lam):
 
   # i'm not super happy about doing this with this sort of if-else
   # consider refactoring to a cleaner solution
-  if psdtype == 'lognorm':
+  if (psdtype == 'lognorm'):
     rmodes = [pp.humidityGrowth(rparams, oner0, onerh, rh) for oner0 in pparam['r0'][radind]]
     rmaxs0 =  [onermax0 for onermax0 in pparam['rmax0'][radind]]
     rmaxs =  [pp.humidityGrowth(rparams, onermax0, onerh, rh) for onermax0 in rmaxs0]
@@ -609,14 +610,6 @@ def calculatePSD(params, radind, onerh, rh, xxarr, drarr, rrat, lam):
     ref = [np.sum((xxarr * lam / 2. / np.pi)**4 * psd) / np.sum((xxarr * lam / 2. / np.pi)**3 * psd)]
 
   elif psdtype == 'du':
-    """
-    Weight these so that the distribution across the major bin respects
-     the Kok size distribution forced in the 5-bin class GOCART
-     scheme. Bins 4 and 5 respectively are weighted 0.484606 and
-     0.144828, or a ratio of 3.34608. Accordingly for the sub-bin just
-     decrease weighting of dndr by this ratio for subbins that would fall
-     into the class 6 - 10 micron bin
-    """
     psd = []
     ref = []
     numminor = len(pparam['rMinMaj'][radind])
@@ -638,8 +631,16 @@ def calculatePSD(params, radind, onerh, rh, xxarr, drarr, rrat, lam):
 
       dr = psdbins
 
+      if(np.max(dndr) == 0.):
+        print(rarr)
+        print(xxarr)
+        print(lam)
+        print('prc:',np.min(xxarr),np.max(xxarr),np.min(rarr),np.max(rarr),lam,rMinMaj,rMaxMaj)
+        sys.exit()
+
+
       thispsd = np.copy(dndr) * dr
-      thispsd /= np.sum(thispsd) 
+      thispsd /= np.sum(thispsd)
       psd.append(thispsd)
 
       rrarr = xxarr * lam / 2. / np.pi
@@ -910,21 +911,24 @@ def fun(partID0, datatype, oppfx, oppclassic):
             fracs = pparam['fracs'][radind]
           retkeys = list(ret1[0].keys()) # all are assumed to have the identical keys so we just get them from 0th index
           ret = integratePSD(xxarr, ret1, psd, fracs, lam, reff_mass0, rhop0, rhop)
+
+          # This is a hack and only applied if (a) psd type is lognormal or 
+          # (b) psd type is 'du' and the number fraction = 1 (i.e., not the first bin)
           # Post integration rescaling of the mass efficiencies because of limited resolution of kernel tables
           # introducing error in effective radius calculation
           # Note: this could be done more generally for number, volume, etc that should not vary with wavelength
-          # For no keep it simple and fix the extinction efficiencies
-          rrarr = xxarr_ * lam / (2. * np.pi)
-          for fraci, frac in enumerate(fracs):
-            rarr2 = rrarr ** 2. * psd_[fraci]
-            rarr3 = rrarr ** 3. * psd_[fraci]
-            reff = np.sum(rarr3) / np.sum(rarr2)
-            massConversion = 1. / rhop / ret['rEff'] * ret['rMass'] / reff_mass0
+          # For now keep it simple and fix the extinction efficiencies
+          if(psdtype == 'lognorm') or (psdtype == 'du' and len(pparam['fracs'][radind]) == 1):
+            rrarr = xxarr_ * lam / (2. * np.pi)
+            for fraci, frac in enumerate(fracs):
+              rarr2 = rrarr ** 2. * psd_[fraci]
+              rarr3 = rrarr ** 3. * psd_[fraci]
+              reff = np.sum(rarr3) / np.sum(rarr2)
 
-            ret['bsca'] = ret['bsca'] * ret['rEff']/reff
-            ret['bext'] = ret['bext'] * ret['rEff']/reff
-            ret['bbck'] = ret['bbck'] * ret['rEff']/reff
-            ret['rEff'] = reff
+              ret['bsca'] = ret['bsca'] * ret['rEff']/reff
+              ret['bext'] = ret['bext'] * ret['rEff']/reff
+              ret['bbck'] = ret['bbck'] * ret['rEff']/reff
+              ret['rEff'] = reff
 
 
         qsca = np.array(ret['qsca'])
@@ -1114,7 +1118,7 @@ def integratePSD(xxarr, rawret, psd, fracs, lam, reff0, rhop0, rhop):
       if key in qscawe:
         thisweight *= rawret[fraci]['qsca'] # scale also by qext
 
-#     PRC: this seems is consisent with how "thisarea" is modified above
+#     PRC: this seems to be consisent with how "thisarea" is modified above
       sumarea = np.sum(psd[fraci] * thisweight)
 #     PRC: WTF, this accumulates over the loop of keys and seems totally wrong!
       totarea += frac * sumarea
