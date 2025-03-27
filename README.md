@@ -14,7 +14,7 @@ Table of Contents
 
 # GEOSmie
 
-See [here (TBD)](tbd) for a full documentation. Below is a brief summary of the structure and usage of the package.
+See [Kemppinen et al. 2002 (https://gmao.gsfc.nasa.gov/pubs/docs/Kemppinen1447.pdf)](tbd) for a full documentation. Below is a brief summary of the structure and usage of the package.
 
 The package consists of the following parts:
 
