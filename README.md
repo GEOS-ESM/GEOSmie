@@ -14,8 +14,7 @@ Table of Contents
 
 # GEOSmie
 
-See [Kemppinen et al. 2002]
-(https://gmao.gsfc.nasa.gov/pubs/docs/Kemppinen1447.pdf) for documentation of
+See [Kemppinen et al. 2002](https://gmao.gsfc.nasa.gov/pubs/docs/Kemppinen1447.pdf) for documentation of
 the approach. Below is a brief summary of the structure and usage of the
 package.
 
