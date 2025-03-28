@@ -14,7 +14,10 @@ Table of Contents
 
 # GEOSmie
 
-See [Kemppinen et al. 2002 (https://gmao.gsfc.nasa.gov/pubs/docs/Kemppinen1447.pdf)](tbd) for a full documentation. Below is a brief summary of the structure and usage of the package.
+See [Kemppinen et al. 2002]
+(https://gmao.gsfc.nasa.gov/pubs/docs/Kemppinen1447.pdf) for documentation of
+the approach. Below is a brief summary of the structure and usage of the
+package.
 
 The package consists of the following parts:
 
@@ -51,7 +54,7 @@ The main single-scattering property calculator consists of two parts: calculatio
 To calculate single-scattering properties at individual wavelengths:
 
 ```bash
-python runoptics.py --name path/to/file.json
+./runoptics.py --name path/to/file.json
 ```
 
 Where file.json defines all of the parameters of the calculation. ".json" can be omitted from the runoptics.py command as a convenience. See JSON examples under geosparticles/ for current GEOS aerosol particles. For users who only want single-scattering properties at individual wavelengths this is all that is needed, and further processing is not needed.
@@ -59,7 +62,7 @@ Where file.json defines all of the parameters of the calculation. ".json" can be
 runoptics.py has a few additional options, use
 
 ```bash
-python runoptics.py --help
+./runoptics.py --help
 ```
 
 to see them
@@ -69,7 +72,7 @@ to see them
 To calculate single-scattering properties at wavelength bands:
 
 ```bash
-python runbands.py --filename filename.nc
+./runbands.py --filename filename.nc
 ```
 
 where filename.nc should be an output file from runoptics.py
@@ -77,7 +80,7 @@ where filename.nc should be an output file from runoptics.py
 For additional options, see
 
 ```bash
-python runbands.py --help
+./runbands.py --help
 ```
 
 ## GSF expansion code
@@ -98,7 +101,7 @@ Other compilers beyond gfortran may work. Testing has been performed with gfortr
 To run the conversion code, assuming the code has been compiled and you are in the gsf/ subdirectory:
 
 ```bash
-python rungsf.py --filename ../filename.nc
+./rungsf.py --filename ../filename.nc
 ```
 
 where ../filename.nc should be an output file from runoptics.py
@@ -106,7 +109,7 @@ where ../filename.nc should be an output file from runoptics.py
 For additional options, see
 
 ```bash
-python rungsf.py --help
+./rungsf.py --help
 ```
 
 ## Kernel conversion code
