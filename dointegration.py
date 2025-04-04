@@ -205,12 +205,12 @@ def find_closest_ind(myList, myNumber, typ='none',ide=''):
 def createNCDF(ncdfID, oppfx, rarr, rharr, lambarr, ang, oppclassic):
 
   if oppclassic:
-    ncdf = netCDF4.Dataset(os.path.join(oppfx, 'optics_%s.geosmie.legacy.nc'%ncdfID), 'w')
+    ncdf = netCDF4.Dataset(os.path.join(oppfx, 'optics_%s.legacy.nc4'%ncdfID), 'w')
     radiusNm = 'radius'
     lambdaNm = 'lambda'
     npolNm   = 'nPol'
   else:
-    ncdf = netCDF4.Dataset(os.path.join(oppfx, 'optics_%s.geosmie.nc'%ncdfID), 'w')
+    ncdf = netCDF4.Dataset(os.path.join(oppfx, 'optics_%s.nc4'%ncdfID), 'w')
     radiusNm = 'bin'
     lambdaNm = 'wavelength'
     npolNm   = 'p'

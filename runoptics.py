@@ -1,11 +1,11 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3.11
 
 """
  Utility to create GEOS/GOCART-compatible aerosol optics look-up tables
  Top-level caller for optics table generation code
  Usage example:
   runoptics.py --name bc.json
- will produce an output file named "optics_bc.geosmie.nc"
+ will produce an output file named "optics_bc.geosmie.nc4"
 
   runoptics -h
  will print a usage message
@@ -107,9 +107,9 @@ if __name__ == "__main__":
     # that is prepended to the results of the initial hydrophilic 
     # calculation
     if options.classic:
-      opfn = "optics_%s.geosmie.legacy.nc"%particlename
+      opfn = "optics_%s.legacy.nc4"%particlename
     else:
-      opfn = "optics_%s.geosmie.nc"%particlename
+      opfn = "optics_%s.nc4"%particlename
     if "hydrophobic" in params and params["hydrophobic"]:
       # rename non-HP file 
       fn2 = "%s.nohp"%opfn
