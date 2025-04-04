@@ -17,6 +17,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Deprecated
 
+## [1.1.3] = 2025-04-4
+
+### Fixed
+- Fixed mass extinction efficiency calculation for kernel
+  driven files 
+
+### Added
+- Added scripting directory for version control of table
+  generation
+
+### Changed
+- Changed file output names to end in ".nc4" for consistency
+  with v1.0.0 files
+- Changed naming style of band tables for consistency with
+  legacy
+
 ## [1.1.2] = 2024-04-02
 
 ### Fixed
