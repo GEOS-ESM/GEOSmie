@@ -330,8 +330,9 @@ def processFileForBandMode(filepath, partcode, opdir, bandmode, useSolar, noIR):
   # get base file name
   fn = os.path.basename(filepath)
 
-  # replace .nc with .BANDMODE.nc
-  opfn = fn.replace('.nc', '.%s.nc'%bandmode)
+  # replace .nc4 with .BANDMODE.nc4
+  opfn_ = fn.replace('.nc4', '.%s.nc4'%bandmode)
+  opfn  = opfn_.replace('optics_','opticsBands_')
   oppath = os.path.join(opdir, opfn)
 
   fun(data, partcode, oppath, bandmode, useSolar, noIR)
@@ -339,7 +340,7 @@ def processFileForBandMode(filepath, partcode, opdir, bandmode, useSolar, noIR):
 def processParticle(part):
   # separate function for each particle so we don't have to read in the netCDF file
   # for every iteration of the band
-  fn = 'integ-%s-raw.nc'%part
+  fn = 'integ-%s-raw.nc4'%part
   fullfn = os.path.join(PFX, fn)
 
   useSolar = False
@@ -356,7 +357,7 @@ def processParticle(part):
   modes = ['GEOS5', 'RRTMG', 'RRTMGP', 'PURDUE']
   for mode in modes:
     print('STARTING MODE %s'%mode)
-    opfn = '%s.%s%s%s.nc'%(fnstrip, mode, solarpart, irpart)
+    opfn = '%s.%s%s%s.nc4'%(fnstrip, mode, solarpart, irpart)
     oppath = os.path.join(pfx, opfn)
     processFileForBandMode(fullfn, part, oppath, mode, useSolar, noIR)
 
