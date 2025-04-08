@@ -1004,8 +1004,8 @@ Calculates the Mueller matrix values from S12
 """
 
 def calculateScatVals(vals, scatkeys, ret, numsizes, s1arr, s2arr):
-  ret[0,:,:] = 0.5 * ( np.abs(s1arr) ** 2 + np.abs(s2arr) ** 2 )  # s11
-  ret[1,:,:] = -0.5 * ( -np.abs(s1arr) ** 2 + np.abs(s2arr) ** 2 ) # s12
+  ret[0,:,:] = 0.5 * ( np.abs(s1arr) ** 2 + np.abs(s2arr) ** 2 ) # s11
+  ret[1,:,:] = 0.5 * ( np.abs(s2arr) ** 2 - np.abs(s1arr) ** 2 ) # s12
   ret[2,:,:] = 0.5 * ( np.abs(s1arr) ** 2 + np.abs(s2arr) ** 2 ) # s22 - same as s11
   ret[3,:,:] = ( s1arr * np.conj(s2arr) ).real # s33
   ret[4,:,:] = -( np.conj(s1arr) * s2arr ).imag # s34
@@ -1126,6 +1126,17 @@ def integratePSD(xxarr, rawret, psd, fracs, lam, reff0, rhop0, rhop):
       if key in scatkeys:
         thisvals = rawret[fraci][key]
         thisret[key] = np.dot(thisvals.T, psd[fraci]) # integrate
+# PRC: tried the block below, didn't like it
+#        thisq    = np.array(rawret[fraci]['qsca'])
+#        beta     = np.sum(thisq*rarr2)*np.pi
+#        fac      = 1./beta
+#        if(key == 's11'):
+#          print(key, thisvals[0,370], fac)
+#        thiskey  = np.zeros((thisvals.shape))
+#        for i in range(0,371):
+#          thiskey[:,i]  = thisvals[:,i]*thisarea*(4.*np.pi)
+#        thisret[key] = np.dot(thiskey.T, psd[fraci])*fac*thisret['qsca']/(4.*np.pi)
+
       elif key in qbwght:
         thisret[key] = p11back*thisret['qsca']/(4.*np.pi)
 #        print(thisret[key])
@@ -1182,7 +1193,7 @@ def rawMie(mm, scatkeys, scalarkeys, lam, mr, mi, psd, costarr):
   vals0['csca'] = np.array(vals0['qsca']) * np.pi * rrarr ** 2
   vals0['cext'] = np.array(vals0['qext']) * np.pi * rrarr ** 2
   vals0['g'] = np.array(vals0['asy']) # change name
-  
+
   numsizes = len(vals0['s12'])
   numang = len(vals0['s12'][0])
   retvals = np.empty([6, numsizes, numang], dtype=np.float64)
