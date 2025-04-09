@@ -84,7 +84,7 @@ class OPTICS(object):
         self.fname = os.path.basename(inFile)
         
         # read optics file
-        self.optics = xr.open_dataset(inFile)
+        self.optics = xr.load_dataset(inFile)
         self.nMom = self.optics.sizes['m']
         self.theta = np.radians(self.optics['ang'])
         self.angle = self.optics['ang'].values
@@ -150,11 +150,11 @@ class OPTICS(object):
         """
         
         mu    = np.cos(self.theta)
-        p11   = xr.DataArray(dims=self.optics['s11'].dims,coords=self.optics['s11'].coords)
+        p11   = xr.DataArray(dims=self.dims,coords=self.coords)
         p11[:] = 0.0
         for s in range(self.nMom):
             P = legendre(s)            
-            p11  += self.optics['pmom'].isel(p=ipol,m=s)*P(mu)
+            p11  += self.optics['pmom'].isel(p=ipol,m=s,rh=self.irh,wavelength=self.iwav,bin=self.ibin)*P(mu)
 
         return p11
 
@@ -164,15 +164,15 @@ class OPTICS(object):
         """
         m = 0
         n = 2
-        p12 = xr.DataArray(dims=self.optics['s12'].dims,coords=self.optics['s12'].coords)
+        p12 = xr.DataArray(dims=self.dims,coords=self.coords)
         p12[:] = 0.0
         for i,t in enumerate(self.theta):
             d0, dneg1 = d_mn(m,n,0,t)
             pfunc = d0/(1j**(n-m)).real
-            p12.isel(ang=i).values = self.optics['pmom'].isel(m=0,p=ipol)*pfunc
+            p12.isel(ang=i).values = self.optics['pmom'].isel(m=0,p=ipol,rh=self.irh,wavelength=self.iwav,bin=self.ibin)*pfunc
             d1, d0 = d_mn(m,n,1,t,dm1=d0,dm2=dneg1)
             pfunc = d1/(1j**(n-m)).real
-            p12.isel(ang=i).values += self.optics['pmom'].isel(m=1,p=ipol)*pfunc
+            p12.isel(ang=i).values += self.optics['pmom'].isel(m=1,p=ipol,rh=self.irh,wavelength=self.iwav,bin=self.ibin)*pfunc
 
             dm2 = d0
             dm1 = d1
@@ -180,7 +180,7 @@ class OPTICS(object):
                 dfunc, dm2 = d_mn(m,n,s,t,dm1=dm1,dm2=dm2)
                 pfunc = dfunc/(1j**(n-m)).real
 
-                p12.isel(ang=i).values += self.optics['pmom'].isel(m=s,p=ipol)*pfunc
+                p12.isel(ang=i).values += self.optics['pmom'].isel(m=s,p=ipol,rh=self.irh,wavelength=self.iwav,bin=self.ibin)*pfunc
 
                 dm1 = dfunc
 
@@ -194,10 +194,10 @@ class OPTICS(object):
         # first get a2 + a3
         m = 2
         n = 2
-        a2p3 = xr.DataArray(dims=self.optics['s22'].dims,coords=self.optics['s22'].coords)
+        a2p3 = xr.DataArray(dims=self.dims,coords=self.coords)
         a2p3[:] = 0.0
-        gsf_coef22 = self.optics['pmom'].isel(p=ipol_22)
-        gsf_coef33 = self.optics['pmom'].isel(p=ipol_33)
+        gsf_coef22 = self.optics['pmom'].isel(p=ipol_22,rh=self.irh,wavelength=self.iwav,bin=self.ibin)
+        gsf_coef33 = self.optics['pmom'].isel(p=ipol_33,rh=self.irh,wavelength=self.iwav,bin=self.ibin)
         for i,t in enumerate(self.theta):
             d0, dneg1 = d_mn(m,n,0,t)
             pfunc = d0/(1j**(n-m)).real
@@ -219,7 +219,7 @@ class OPTICS(object):
         # next get a2 - a3
         m = 2
         n = -2
-        a2m3 = xr.DataArray(dims=self.optics['s22'].dims,coords=self.optics['s22'].coords)
+        a2m3 = xr.DataArray(dims=self.dims,coords=self.coords)
         a2m3[:] = 0.0
         for i,t in enumerate(self.theta):
             d0, dneg1 = d_mn(m,n,0,t)
@@ -253,9 +253,9 @@ class OPTICS(object):
         m = 0
         n = 2
 
-        p34 = xr.DataArray(dims=self.optics['s34'].dims,coords=self.optics['s34'].coords)
+        p34 = xr.DataArray(dims=self.dims,coords=self.coords)
         p34[:] = 0.0
-        gsf_coef = self.optics['pmom'].isel(p=ipol)
+        gsf_coef = self.optics['pmom'].isel(p=ipol,rh=self.irh,wavelength=self.iwav,bin=self.ibin)
         for i,t in enumerate(self.theta):
             d0, dneg1 = d_mn(m,n,0,t)
             pfunc = d0/(1j**(n-m)).real
@@ -317,6 +317,7 @@ class OPTICS(object):
                     ax.plot(self.angle, self.p22.isel(rh=rh,wavelength=wav,bin=bin)/p11,label='GSF')
                     ax.plot(self.angle,self.optics['s22'].isel(rh=rh,wavelength=wav,bin=bin)/s11,label='S22')
                     ax.legend()
+                    ax.set_yscale('log')
                     ax.set_title('P22=P5')
 
                     # P33
@@ -341,7 +342,9 @@ class OPTICS(object):
                     ax.set_title('P44=P6')
 
                     # Adjust layout and display
+                    plt.suptitle(self.fname + ' ibin{} irh={} iwav={}'.format(bin,rh,wav))
                     plt.subplots_adjust(wspace=0.2)
+                    plt.savefig(self.fname + '_ibin{}_irh{}_iwav{}.png'.format(bin,rh,wav),transparent=True)
                     plt.show()
 if __name__ == '__main__':
 
