@@ -345,7 +345,7 @@ class OPTICS(object):
                     plt.suptitle(self.fname + ' ibin{} irh={} iwav={}'.format(bin,rh,wav))
                     plt.subplots_adjust(wspace=0.2)
                     plt.savefig(self.fname + '_ibin{}_irh{}_iwav{}.png'.format(bin,rh,wav),transparent=True)
-                    plt.show()
+                    #plt.show()
 if __name__ == '__main__':
 
     inDir =  '/discover/nobackup/pcastell/workspace/aero_work/aist/sbg/aop_testing/ExtDataColarco'
