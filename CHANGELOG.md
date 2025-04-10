@@ -10,14 +10,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 ### Added
-- Added components.yaml and CMakeLists.txt and directory structure to bring
-  GMAOpyobs into GEOSmie
 
 ### Changed
 
 ### Removed
 
 ### Deprecated
+
+## [1.2.1] - 2025-04-10
+
+### Added
+- Added components.yaml and CMakeLists.txt and directory structure to bring
+  GMAOpyobs into GEOSmie
 
 ## [1.2.0] - 2025-04-10
 
