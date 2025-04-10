@@ -17,11 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Deprecated
 
-
-## [1.2.0] - 2024-06-06
+## [1.2.0] - 2025-04-10
 
 ### Changed
 
+- Changed file output names to end in ".nc4" for consistency with v1.0.0 files
+- Changed naming style of band tables for consistency with legacy
 - JSON settings files for kernelconversion.py are no longer required to include a "numang"
   key but now do require "renormUpperX", "angFwdPeak", and "kernelScaleFact"
 - Normalization of P11 prior to integral calculating g is obtained from GRASP kernel 
@@ -30,6 +31,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed mass extinction efficiency calculation for kernel driven files
+- Fixed sign of s12 output
 - Scattering matrix elements written by convertkernels.py are now normalized such that P11
   integrates to 4*pi instead of using esoteric GRASP scaling scheme
 - Implemented new scheme relying on normalization of P11 in GRASP kernels to prevent
@@ -39,6 +42,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Created utils directory with eval_gsfun.py script
+- Added scripting directory for version control of table generation
 - Long names and descriptions to variables in NetCDF file output by convertkernels.py
 - Calculation of graspfactor so kernels with different size parameter spacing can be used 
 - Reading of scattering angles from GRASP kernels so 1 deg spacing is not always assumed

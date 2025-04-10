@@ -15,7 +15,7 @@ naming.
 import netCDF4
 import os
 
-def doConversion(infn, outfn, pfx):
+def doConversion(infn, outfn, pfx, oppclassic):
   
   fn = os.path.join(pfx, infn)
   fn2 = os.path.join(pfx, outfn)
@@ -35,8 +35,11 @@ def doConversion(infn, outfn, pfx):
   
   # To copy the dimension of the netCDF file
 
-  dimsizes = {'bin': 2}
-  
+  if oppclassic:
+    dimsizes = {'radius': 2}
+  else:
+    dimsizes = {'bin': 2}
+
   for dimname,dim in list(f.dimensions.items()):
     # if you want to make changes in the dimensions of the new file
     # you should add your own conditions here before the creation of the dimension.
@@ -50,14 +53,19 @@ def doConversion(infn, outfn, pfx):
     # if you want to make changes in the variables of the new file
     # you should add your own conditions here before the creation of the variable.
     var = g.createVariable(varname,ncvar.dtype,ncvar.dimensions,compression='zlib')
+
     #Proceed to copy the variable attributes
     for attname in ncvar.ncattrs():
        setattr(var,attname,getattr(ncvar,attname))
     #Finally copy the variable data to the new created variable
     if var.shape != ncvar.shape:
       if len(var.shape) == 1:
-        for vari in range(len(var.shape)):
-          var[vari] = ncvar[0]
+        if varname in dimsizes:
+          var[0] = 1
+          var[1] = 2
+        else:
+          for vari in range(len(var.shape)):
+            var[vari] = ncvar[0]
       elif len(var.shape) == 2:
         for ri in range(var.shape[0]):
           for rhi in range(var.shape[1]):
@@ -66,19 +74,43 @@ def doConversion(infn, outfn, pfx):
             else: # regular case
               var[ri,rhi] = ncvar[0,rhi] # set hydrophilic RH case 
       elif len(var.shape) == 3:
-        for ri in range(var.shape[0]):
-          for rhi in range(var.shape[2]):
-            if ri == 0: # hydrophobic case
-              var[0,:,rhi] = ncvar[0,:,0] # set zero RH case 
-            else: # regular case
-              var[ri,:,rhi] = ncvar[0,:,rhi] # set hydrophilic RH case 
+        if oppclassic:
+          for ri in range(var.shape[0]):
+            for rhi in range(var.shape[1]):
+              if ri == 0: # hydrophobic case
+                var[0,rhi,:] = ncvar[0,0,:] # set zero RH case 
+              else: # regular case
+                var[ri,rhi,:] = ncvar[0,rhi,:] # set hydrophilic RH case 
+        else:
+          for ri in range(var.shape[0]):
+            for rhi in range(var.shape[2]):
+              if ri == 0: # hydrophobic case
+                var[0,:,rhi] = ncvar[0,:,0] # set zero RH case 
+              else: # regular case
+                var[ri,:,rhi] = ncvar[0,:,rhi] # set hydrophilic RH case 
       elif len(var.shape) == 4:
-        for ri in range(var.shape[0]):
-          for rhi in range(var.shape[2]):
-            if ri == 0: # hydrophobic case
-              var[0,:,rhi,:] = ncvar[0,:,0,:] # set zero RH case 
-            else: # regular case
-              var[ri,:,rhi,:] = ncvar[0,:,rhi,:] # set hydrophilic RH case 
+       if var.shape[0] == 6: # this is pback in legacy case that we have to handle separately
+          for ri in range(var.shape[1]):
+            for rhi in range(var.shape[2]):
+              if ri == 0: # hydrophobic case
+                var[:,0,rhi,:] = ncvar[:,0,0,:] # set zero RH case
+              else: # regular case
+                var[:,ri,rhi,:] = ncvar[:,0,rhi,:] # set zero RH case
+       else:
+        if oppclassic:
+          for ri in range(var.shape[0]):
+            for rhi in range(var.shape[1]):
+              if ri == 0: # hydrophobic case
+                var[0,rhi,:,:] = ncvar[0,0,:,:] # set zero RH case 
+              else: # regular case
+                var[ri,rhi,:,:] = ncvar[0,rhi,:,:] # set hydrophilic RH case 
+        else:
+          for ri in range(var.shape[0]):
+            for rhi in range(var.shape[2]):
+              if ri == 0: # hydrophobic case
+                var[0,:,rhi,:] = ncvar[0,:,0,:] # set zero RH case 
+              else: # regular case
+                var[ri,:,rhi,:] = ncvar[0,:,rhi,:] # set hydrophilic RH case 
       else:
         print("unhandled number of dimensions")
         print(ncvar)

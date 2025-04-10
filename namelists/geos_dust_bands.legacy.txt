@@ -1,0 +1,3 @@
+x/optics_du-grasp_spheroid.geosmie.legacy.nc
+x/optics_du-grasp_spheroid-lognormal.geosmie.legacy.nc
+x/optics_du-saito_hexahedra.geosmie.legacy.nc

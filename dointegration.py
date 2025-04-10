@@ -168,7 +168,7 @@ def getMMPSD(xxArr, rmodeArr, rMaxArr, rMinArr, sigmaArr, lambd, fracarr):
   totfrac = np.sum(fracarr)
   totdist = np.zeros_like(xxArr)
   for ii, rMode in enumerate(rmodeArr):
-    thisdist = pp.getLogNormPSD(xxArr, rMode, rMaxArr[ii], rMinArr[ii], sigmaArr[ii], lambd)
+    thisdist = pp.getLogNormPSD(rMode, sigmaArr[ii], xxArr, lambd, rMaxArr[ii], rMinArr[ii])
     totdist += fracarr[ii] * thisdist
   totdist /= totfrac
   return totdist
@@ -202,21 +202,31 @@ def find_closest_ind(myList, myNumber, typ='none',ide=''):
       return pos - 1
 
 
-def createNCDF(ncdfID, oppfx, rarr, rharr, lambarr, ang):
-  ncdf = netCDF4.Dataset(os.path.join(oppfx, 'integ-%s.nc'%ncdfID), 'w')
+def createNCDF(ncdfID, oppfx, rarr, rharr, lambarr, ang, oppclassic):
+
+  if oppclassic:
+    ncdf = netCDF4.Dataset(os.path.join(oppfx, 'optics_%s.legacy.nc4'%ncdfID), 'w')
+    radiusNm = 'radius'
+    lambdaNm = 'lambda'
+    npolNm   = 'nPol'
+  else:
+    ncdf = netCDF4.Dataset(os.path.join(oppfx, 'optics_%s.nc4'%ncdfID), 'w')
+    radiusNm = 'bin'
+    lambdaNm = 'wavelength'
+    npolNm   = 'p'
 
   idRh     = ncdf.createDimension('rh', len(rharr))
-  idLambda = ncdf.createDimension('wavelength', len(lambarr))
-  idBin    = ncdf.createDimension('bin', len(rarr))
-  idNpol   = ncdf.createDimension('p', 6)
+  idLambda = ncdf.createDimension(lambdaNm, len(lambarr))
+  idBin    = ncdf.createDimension(radiusNm, len(rarr))
+  idNpol   = ncdf.createDimension(npolNm, 6)
   idAng    = ncdf.createDimension('ang', len(ang))
 
   vardict = {} # holds all the variable metadata
-  vardict['bin'] = {'units': 'dimensionless', \
+  vardict[radiusNm] = {'units': 'dimensionless', \
   'long_name': 'radius bin index (1-indexed)'
   }
 
-  vardict['p'] = {'units': 'dimensionless', \
+  vardict[npolNm] = {'units': 'dimensionless', \
   'long_name': 'Scattering matrix element index, ordered as P11, P12, P33, P34, P22, P44' 
   }
 
@@ -224,7 +234,7 @@ def createNCDF(ncdfID, oppfx, rarr, rharr, lambarr, ang):
   'long_name': 'relative humidity' 
   }
    
-  vardict['wavelength'] = {'units': 'm', \
+  vardict[lambdaNm] = {'units': 'm', \
   'long_name': 'wavelength' 
   }
 
@@ -325,13 +335,13 @@ def createNCDF(ncdfID, oppfx, rarr, rharr, lambarr, ang):
   }
 
   idRH     = ncdf.createVariable('rh', 'f8', ('rh'), compression='zlib')
-  idLambda = ncdf.createVariable('wavelength', 'f8', ('wavelength'), compression='zlib')
-  idR      = ncdf.createVariable('bin', 'i8', ('bin'), compression='zlib')
-  idNpol   = ncdf.createVariable('p', 'i8', ('p'), compression='zlib')
+  idLambda = ncdf.createVariable(lambdaNm, 'f8', (lambdaNm), compression='zlib')
+  idR      = ncdf.createVariable(radiusNm, 'i8', (radiusNm), compression='zlib')
+  idNpol   = ncdf.createVariable(npolNm, 'i8', (npolNm), compression='zlib')
   idAng    = ncdf.createVariable('ang', 'f8', ('ang'), compression='zlib')
 
   # use list for easier looping
-  dimvars = ['bin', 'rh', 'wavelength', 'ang', 'p']
+  dimvars = [radiusNm, 'rh', lambdaNm, 'ang', npolNm]
   for var in dimvars:
     ncdf.variables[var].long_name = vardict[var]['long_name']
     ncdf.variables[var].units = vardict[var]['units']
@@ -343,13 +353,22 @@ def createNCDF(ncdfID, oppfx, rarr, rharr, lambarr, ang):
   idAng[:] = ang
   idNpol[:] = [11,12,33,34,22,44]
 
-  ncdfDimensionTypes = {\
-                        "scalarScattering": ("bin", "wavelength", "rh"),\
-  "noLambdaScalarScattering": ("bin", "rh"),\
-  "scatteringFun": ("bin", "wavelength", "rh", "ang"),\
-  "elementScattering": ("bin", "wavelength", "rh", "p"),\
-  "scalarVals": ("bin"),\
-  }
+  if oppclassic:
+    ncdfDimensionTypes = {\
+                          "scalarScattering": (radiusNm, "rh", lambdaNm),\
+                          "noLambdaScalarScattering": (radiusNm, "rh"),\
+                          "scatteringFun": (radiusNm, "rh", lambdaNm, "ang"),\
+                          "elementScattering": (npolNm, radiusNm, "rh", lambdaNm),\
+                          "scalarVals": (radiusNm),\
+                          }
+  else:
+    ncdfDimensionTypes = {\
+                          "scalarScattering": (radiusNm, lambdaNm, "rh"),\
+                          "noLambdaScalarScattering": (radiusNm, "rh"),\
+                          "scatteringFun": (radiusNm, lambdaNm, "rh", "ang"),\
+                          "elementScattering": (radiusNm, lambdaNm, "rh", "p"),\
+                          "scalarVals": (radiusNm),\
+                          }
 
   # for each NetCDF variable, assign one dimension type based on the dimension types dictionary
   ncdfVariableDimensionTypes = {\
@@ -435,26 +454,41 @@ def initializeXarr(params, radind, minlam, maxlam):
     drarr2 = getDR(xxarr)
     drrat = drarr / drarr2
   elif psdtype == 'du':
-    minx = pparam['rMinMaj'][radind][0] * 2 * np.pi / maxlam 
+    minx = pparam['rMinMaj'][radind][0] * 2 * np.pi / maxlam
     maxx = pparam['rMaxMaj'][radind][-1] * 2 * np.pi / minlam
-    xxarr = np.linspace(minx, maxx, 1000) # small size range for testing
+    # Try a logarithmic spacing
+    xxarr = (np.linspace(np.log10(minx), np.log10(maxx), 1000))**10.
     drarr = None # not used for dust since it's overwritten by GRASP values
     
   return xxarr, drarr
     
-def copyDryValues(opncdf, allkeys, scatkeys, elekeys, extrakeys, nlscalarkeys, radind, rhi, li):
-  for key in allkeys: 
-    if key in scatkeys:
-      opncdf.variables[key][radind, li, rhi, :] = opncdf.variables[key][radind, li, 0, :]
-    elif key in elekeys:
-      opncdf.variables[key][radind, li, rhi, :] = opncdf.variables[key][radind, li, 0, :]
-    elif key in scalarkeys + extrakeys:
-      opncdf.variables[key][radind, li, rhi] = opncdf.variables[key][radind, li, 0]
-    elif key in nlscalarkeys:
-      opncdf.variables[key][radind, rhi] = opncdf.variables[key][radind, 0]
-    else:
-      print("key category missing: %s"%key)
-      sys.exit()
+def copyDryValues(opncdf, allkeys, scatkeys, elekeys, extrakeys, nlscalarkeys, radind, rhi, li, oppclassic):
+  if oppclassic:
+    for key in allkeys: 
+      if key in scatkeys:
+        opncdf.variables[key][radind, rhi, li, :] = opncdf.variables[key][radind, 0, li, :]
+      elif key in elekeys:
+        opncdf.variables[key][:, radind, rhi, li] = opncdf.variables[key][:, radind, 0, li]
+      elif key in scalarkeys + extrakeys:
+        opncdf.variables[key][radind, rhi, li] = opncdf.variables[key][radind, 0, li]
+      elif key in nlscalarkeys:
+        opncdf.variables[key][radind, rhi] = opncdf.variables[key][radind, 0]
+      else:
+        print("key category missing: %s"%key)
+        sys.exit()
+  else:
+    for key in allkeys: 
+      if key in scatkeys:
+        opncdf.variables[key][radind, li, rhi, :] = opncdf.variables[key][radind, li, 0, :]
+      elif key in elekeys:
+        opncdf.variables[key][radind, li, rhi, :] = opncdf.variables[key][radind, li, 0, :]
+      elif key in scalarkeys + extrakeys:
+        opncdf.variables[key][radind, li, rhi] = opncdf.variables[key][radind, li, 0]
+      elif key in nlscalarkeys:
+        opncdf.variables[key][radind, rhi] = opncdf.variables[key][radind, 0]
+      else:
+        print("key category missing: %s"%key)
+        sys.exit()
 
 def getHumidRefractiveIndex(params, radind, rhi, rh, nref0, nrefwater):
   psdtype = params['psd']['type']
@@ -498,7 +532,7 @@ def calculatePSD(params, radind, onerh, rh, xxarr, drarr, rrat, lam):
 
   # i'm not super happy about doing this with this sort of if-else
   # consider refactoring to a cleaner solution
-  if psdtype == 'lognorm':
+  if (psdtype == 'lognorm'):
     rmodes = [pp.humidityGrowth(rparams, oner0, onerh, rh) for oner0 in pparam['r0'][radind]]
     rmaxs0 =  [onermax0 for onermax0 in pparam['rmax0'][radind]]
     rmaxs =  [pp.humidityGrowth(rparams, onermax0, onerh, rh) for onermax0 in rmaxs0]
@@ -517,12 +551,14 @@ def calculatePSD(params, radind, onerh, rh, xxarr, drarr, rrat, lam):
     psd = []
     ref = []
     for psdi in range(len(rmodes)):
-      thispsd = pp.getLogNormPSD(xxarr, rmodes[psdi], rmaxs[psdi], rmins[psdi], sigmas[psdi], lam)
+#     This call returns PSD as dN/dr
+      thispsd = pp.getLogNormPSD(rmodes[psdi], sigmas[psdi], xxarr, lam, rmaxs[psdi], rmins[psdi])
       psdbins = drarr
 
       dr = psdbins
       dndr = thispsd / np.sum(thispsd)
-      
+
+#     Following converts PSD to dN      
       thispsd *= psdbins 
       thispsd /= np.sum(thispsd)
 
@@ -574,14 +610,6 @@ def calculatePSD(params, radind, onerh, rh, xxarr, drarr, rrat, lam):
     ref = [np.sum((xxarr * lam / 2. / np.pi)**4 * psd) / np.sum((xxarr * lam / 2. / np.pi)**3 * psd)]
 
   elif psdtype == 'du':
-    """
-    Weight these so that the distribution across the major bin respects
-     the Kok size distribution forced in the 5-bin class GOCART
-     scheme. Bins 4 and 5 respectively are weighted 0.484606 and
-     0.144828, or a ratio of 3.34608. Accordingly for the sub-bin just
-     decrease weighting of dndr by this ratio for subbins that would fall
-     into the class 6 - 10 micron bin
-    """
     psd = []
     ref = []
     numminor = len(pparam['rMinMaj'][radind])
@@ -603,8 +631,16 @@ def calculatePSD(params, radind, onerh, rh, xxarr, drarr, rrat, lam):
 
       dr = psdbins
 
+      if(np.max(dndr) == 0.):
+        print(rarr)
+        print(xxarr)
+        print(lam)
+        print('prc:',np.min(xxarr),np.max(xxarr),np.min(rarr),np.max(rarr),lam,rMinMaj,rMaxMaj)
+        sys.exit()
+
+
       thispsd = np.copy(dndr) * dr
-      thispsd /= np.sum(thispsd) 
+      thispsd /= np.sum(thispsd)
       psd.append(thispsd)
 
       rrarr = xxarr * lam / 2. / np.pi
@@ -615,17 +651,18 @@ def calculatePSD(params, radind, onerh, rh, xxarr, drarr, rrat, lam):
 
 # This is the main integration function called from runoptics.py
 # Inputs are:
-#  partID0:  the particle type JSON file header or filename, e.g., bc, oc, ...
-#  datatype: the type of the file to be parsed, must be JSON presently
-#  oppfx:    the path for the output file
-def fun(partID0, datatype, oppfx):
+#  partID0:    the particle type JSON file header or filename, e.g., bc, oc, ...
+#  datatype:   the type of the file to be parsed, must be JSON presently
+#  oppfx:      the path for the output file
+#  oppclassic: generate legacy format lookup table
+def fun(partID0, datatype, oppfx, oppclassic):
 
   # clean up partID, reduce just to particle type (e.g., bc, oc, ...)
   partID = partID0.split('/')[-1].replace(".json", "")
 
   print("\n ####################\n Starting case %s\n ####################\n"%partID)
 
-  ncdfID = '%s-raw'%partID
+  ncdfID = '%s'%partID
   if '-orig' in partID:
     partID2 = partID0.replace('-orig', '')
   else:
@@ -637,9 +674,10 @@ def fun(partID0, datatype, oppfx):
   # or using GRASP-like kernel files. Code does not presently include
   # any alternative internal calculations to Mie.
   mode = 'mie'
-  if 'shape' in params:
-    mode = params['shape']
-  if mode == 'spheroid' or mode == 'spheroid_sphere':
+  if 'mode' in params:
+    mode = params['mode']
+#  if mode == 'spheroid' or mode == 'spheroid_sphere':
+  if mode == 'kernel':
     useGrasp = True
   elif mode == 'mie':
     useGrasp = False
@@ -696,7 +734,7 @@ def fun(partID0, datatype, oppfx):
   minlam = lambarr[0]
   maxlam = lambarr[-1]
 
-  opncdf = createNCDF(ncdfID, oppfx, radiusarr, rh, lambarr, ang[:])
+  opncdf = createNCDF(ncdfID, oppfx, radiusarr, rh, lambarr, ang[:], oppclassic)
 
   if useGrasp:
     # if we are using a spheroid kernel system then override xxarr with
@@ -719,7 +757,15 @@ def fun(partID0, datatype, oppfx):
     print('Done')
 
     xxarr = spdata.variables['x'][:]
-    drarr = getDR(xxarr) 
+    # Original call to getDR below, but for our kernel files to date
+    # there is a simple geometric progression in size space; i.e., 
+    # x1 = rat*x0, x2 = rat*x1, ...
+    # and so more accurately r/dr is constant. In CARMA land I reproduce
+    # some of the functionality here to get this accurate.
+    # drarr = getDR(xxarr) 
+    rmrat = (xxarr[1]/xxarr[0])**3
+    vrfact = ( (3./2./np.pi / (rmrat+1))**(1./3.))*(rmrat**(1./3.) - 1.)
+    drarr  = vrfact*(4./3.*np.pi*xxarr**3.)**(1./3.)
 
   # Loop over the particle size bins/modes
   for radind in radindarr:
@@ -727,6 +773,9 @@ def fun(partID0, datatype, oppfx):
 
     if not useGrasp:
       xxarr, drarr = initializeXarr(params, radind, minlam, maxlam)
+    else:
+      # Get a nominal size array like you are not using GRASP for later
+      xxarr_, drarr_ = initializeXarr(params, radind, minlam, maxlam)
 
     if mode == 'mie':
       multipleMie = MultipleMie(xxarr, None, costarr)
@@ -737,13 +786,12 @@ def fun(partID0, datatype, oppfx):
       allvals[key] = np.zeros(opncdf.variables[key][:].shape)
 
     """
+    Start wavelength loop
     TODO!
     parallelization over lambda, i.e. have a single worker evaluate each lambda since they are independent of each other
     therefore, we should move this huge block of code under the loop into a separate function that takes lambda as a 
     parameter along with everything else it needs
     """
-
-    iii = 0
     for li, lam in enumerate(lambarr):
       print("+++++ LAMBDA %.2e +++++"%lam)
       mr0 = [partMr[i](lam) for i in range(len(partMr))]
@@ -782,12 +830,14 @@ def fun(partID0, datatype, oppfx):
         rparams = params['rhDep']
 
         if params['rhDep']['type'] == 'trivial' and rhi > 0: # same values for all rh, save in computation
-          copyDryValues(opncdf, allkeys, scatkeys, elekeys, extrakeys, nlscalarkeys, radind, rhi, li)
+          copyDryValues(opncdf, allkeys, scatkeys, elekeys, extrakeys, nlscalarkeys, radind, rhi, li, oppclassic)
           continue
 
         mr, mi, gf, rrat = getHumidRefractiveIndex(params, radind, rhi, rh, nref0, nrefwater)
 
         psd, ref, rLow, rUp = calculatePSD(params, radind, onerh, rh, xxarr, drarr, rrat, lam)
+        if useGrasp:
+          psd_, ref_, rLow_, rUp_ = calculatePSD(params, radind, onerh, rh, xxarr_, drarr_, rrat, lam)
 
         """
         ***********
@@ -817,6 +867,8 @@ def fun(partID0, datatype, oppfx):
             # make compatible with multibin psd
             allret = [allret[0] for i in range(len(psd))] # multibin
 
+          retkeys = list(allret[0].keys()) # all are assumed to have the identical keys so we just get them from 0th index
+
           # separate integration step
           ret = integratePSD(multipleMie.xArr, allret, psd, pparam['fracs'][radind], lam, reff_mass0, rhop0, rhop)
 
@@ -827,6 +879,7 @@ def fun(partID0, datatype, oppfx):
           allmi = -ret0['mi'][:] # change sign
 
           keys = ['ext', 'abs', 'sca', 'qext', 'qabs', 'qsca', 'qb', 'g', 'cext', 'csca', 'cabs']
+#          keys = ['ext', 'abs', 'sca', 'qext', 'qsca', 'qb', 'g', 'cext', 'csca']
           scatelekeys = ['scama']
           scatelems = ['s11', 's22', 's33', 's44', 's12', 's34'] # order Mischenko's code expects
           ret1 = {}
@@ -853,10 +906,30 @@ def fun(partID0, datatype, oppfx):
           ret1 = [ret1 for i in range(len(psd))] # multibin
           if len(pparam['fracs']) == 1:
             # if only one set of fracs is given we always use it
-            usefracs = pparam['fracs'][0]
+            fracs = pparam['fracs'][0]
           else:
-            usefracs = pparam['fracs'][radind]
-          ret = integratePSD(xxarr, ret1, psd, usefracs, lam, reff_mass0, rhop0, rhop)
+            fracs = pparam['fracs'][radind]
+          retkeys = list(ret1[0].keys()) # all are assumed to have the identical keys so we just get them from 0th index
+          ret = integratePSD(xxarr, ret1, psd, fracs, lam, reff_mass0, rhop0, rhop)
+
+          # This is a hack and only applied if (a) psd type is lognormal or 
+          # (b) psd type is 'du' and the number fraction = 1 (i.e., not the first bin)
+          # Post integration rescaling of the mass efficiencies because of limited resolution of kernel tables
+          # introducing error in effective radius calculation
+          # Note: this could be done more generally for number, volume, etc that should not vary with wavelength
+          # For now keep it simple and fix the extinction efficiencies
+          if(psdtype == 'lognorm') or (psdtype == 'du' and len(pparam['fracs'][radind]) == 1):
+            rrarr = xxarr_ * lam / (2. * np.pi)
+            for fraci, frac in enumerate(fracs):
+              rarr2 = rrarr ** 2. * psd_[fraci]
+              rarr3 = rrarr ** 3. * psd_[fraci]
+              reff = np.sum(rarr3) / np.sum(rarr2)
+
+              ret['bsca'] = ret['bsca'] * ret['rEff']/reff
+              ret['bext'] = ret['bext'] * ret['rEff']/reff
+              ret['bbck'] = ret['bbck'] * ret['rEff']/reff
+              ret['rEff'] = reff
+
 
         qsca = np.array(ret['qsca'])
         qext = np.array(ret['qext'])
@@ -890,22 +963,34 @@ def fun(partID0, datatype, oppfx):
         ret['refimag'] = -np.abs(mi[0]) # force negative to be consistent with Pete's tables
 
         pback = np.array(ret['pback'])
-#        print(rh[rhi],mr, mi, qext, qsca, g, qb*np.pi)
-#        print(rh[rhi],ref,rLow, rUp)
 
-        for key in allkeys: # we can also save to allvals and write later
-          if key in scatkeys:
-            iii += 1
-            opncdf.variables[key][radind, li, rhi, :] = ret[key][:]
-          elif key in elekeys:
-            opncdf.variables[key][radind, li, rhi, :] = ret[key][:]
-          elif key in scalarkeys + extrakeys:
-            opncdf.variables[key][radind, li, rhi] = ret[key]
-          elif key in nlscalarkeys:
-            opncdf.variables[key][radind, rhi] = ret[key]
-          else:
-            print("key category missing: %s"%key)
-            sys.exit()
+#       Support for legacy format lookup tables
+        if oppclassic:
+          for key in allkeys: # we can also save to allvals and write later
+            if key in scatkeys:
+              opncdf.variables[key][radind, rhi, li, :] = ret[key][:]
+            elif key in elekeys:
+              opncdf.variables[key][:, radind, rhi, li] = ret[key][:]
+            elif key in scalarkeys + extrakeys:
+              opncdf.variables[key][radind, rhi, li] = ret[key]
+            elif key in nlscalarkeys:
+              opncdf.variables[key][radind, rhi] = ret[key]
+            else:
+              print("key category missing: %s"%key)
+              sys.exit()
+        else:
+          for key in allkeys: # we can also save to allvals and write later
+            if key in scatkeys:
+              opncdf.variables[key][radind, li, rhi, :] = ret[key][:]
+            elif key in elekeys:
+              opncdf.variables[key][radind, li, rhi, :] = ret[key][:]
+            elif key in scalarkeys + extrakeys:
+              opncdf.variables[key][radind, li, rhi] = ret[key]
+            elif key in nlscalarkeys:
+              opncdf.variables[key][radind, rhi] = ret[key]
+            else:
+              print("key category missing: %s"%key)
+              sys.exit()
         # end rh loop
       # end lambda loop
     # end radind loop
@@ -919,8 +1004,8 @@ Calculates the Mueller matrix values from S12
 """
 
 def calculateScatVals(vals, scatkeys, ret, numsizes, s1arr, s2arr):
-  ret[0,:,:] = 0.5 * ( np.abs(s1arr) ** 2 + np.abs(s2arr) ** 2 )  # s11
-  ret[1,:,:] = -0.5 * ( -np.abs(s1arr) ** 2 + np.abs(s2arr) ** 2 ) # s12
+  ret[0,:,:] = 0.5 * ( np.abs(s1arr) ** 2 + np.abs(s2arr) ** 2 ) # s11
+  ret[1,:,:] = 0.5 * ( np.abs(s2arr) ** 2 - np.abs(s1arr) ** 2 ) # s12
   ret[2,:,:] = 0.5 * ( np.abs(s1arr) ** 2 + np.abs(s2arr) ** 2 ) # s22 - same as s11
   ret[3,:,:] = ( s1arr * np.conj(s2arr) ).real # s33
   ret[4,:,:] = -( np.conj(s1arr) * s2arr ).imag # s34
@@ -1026,17 +1111,32 @@ def integratePSD(xxarr, rawret, psd, fracs, lam, reff0, rhop0, rhop):
 #        print(thisp11)
 #        exit()
 
+#     PRC: The following seems dangerous as it resets "thisweight" and
+#     seems it would be bad if the order of the keys changed
       qscawe = ['g']
 
       if key in qscawe:
         thisweight *= rawret[fraci]['qsca'] # scale also by qext
 
+#     PRC: this seems to be consisent with how "thisarea" is modified above
       sumarea = np.sum(psd[fraci] * thisweight)
+#     PRC: WTF, this accumulates over the loop of keys and seems totally wrong!
       totarea += frac * sumarea
       
       if key in scatkeys:
         thisvals = rawret[fraci][key]
         thisret[key] = np.dot(thisvals.T, psd[fraci]) # integrate
+# PRC: tried the block below, didn't like it
+#        thisq    = np.array(rawret[fraci]['qsca'])
+#        beta     = np.sum(thisq*rarr2)*np.pi
+#        fac      = 1./beta
+#        if(key == 's11'):
+#          print(key, thisvals[0,370], fac)
+#        thiskey  = np.zeros((thisvals.shape))
+#        for i in range(0,371):
+#          thiskey[:,i]  = thisvals[:,i]*thisarea*(4.*np.pi)
+#        thisret[key] = np.dot(thiskey.T, psd[fraci])*fac*thisret['qsca']/(4.*np.pi)
+
       elif key in qbwght:
         thisret[key] = p11back*thisret['qsca']/(4.*np.pi)
 #        print(thisret[key])
@@ -1062,7 +1162,6 @@ def integratePSD(xxarr, rawret, psd, fracs, lam, reff0, rhop0, rhop):
         elif mixing == 'dumix':
           thisint = np.dot(thisvals, psd[fraci] * thisweight)
           thisret[key] = thisint / sumarea
-#          print(key, np.sum(psd[fraci] * thisweight), sumarea, thisret[key])
 
     # calculate mass efficiencies here
     massConversion = 1. / rhop / thisret['rEff'] * thisret['rMass'] / rMass0
@@ -1094,7 +1193,7 @@ def rawMie(mm, scatkeys, scalarkeys, lam, mr, mi, psd, costarr):
   vals0['csca'] = np.array(vals0['qsca']) * np.pi * rrarr ** 2
   vals0['cext'] = np.array(vals0['qext']) * np.pi * rrarr ** 2
   vals0['g'] = np.array(vals0['asy']) # change name
-  
+
   numsizes = len(vals0['s12'])
   numang = len(vals0['s12'][0])
   retvals = np.empty([6, numsizes, numang], dtype=np.float64)

@@ -101,16 +101,20 @@ def humidityGrowth(params, siz0, rh, allrh): # assume all different sizes grow i
        return (c1 * siz ** c2 / (c3 * siz ** c4 - np.log10(rh)) + siz ** 3.) ** (1./3.) / 100.
 
 # Function to return a lognormal distribution in terms of size parameter and parameters
-def getLogNormPSD(xxArr, rmode, rmax, rmin, sigma, lambd):
+# Returns dndr assuming parameter rmode is the mode of a number distribution, or
+# equivalently dNdx since it is done in size parameter space
+def getLogNormPSD(rmode, sigma, xxArr, lambd, rmax, rmin):
   xconv = 2 * np.pi / lambd
-  # get distribution variables in x space
+
+  # get distribution variables in size parameter space
   xmode = rmode * xconv
   xmax = rmax * xconv
   xmin = rmin * xconv
 
-  dist3 = 1./(xxArr * (2*np.pi) ** 0.5 * np.log(sigma) ) * np.exp(-(np.log(xxArr/xmode)**2) / (2. * np.log(sigma) ** 2))
+  dNdx =   1./(xxArr * (2*np.pi) ** 0.5 * np.log(sigma) ) \
+         * np.exp(-(np.log(xxArr/xmode)**2) / (2. * np.log(sigma) ** 2))
 
-  dist3[np.where(xxArr >= xmax)] = 0. # set values greater than xmax to zero
-  dist3[np.where(xxArr <= xmin)] = 0. 
+  dNdx[np.where(xxArr >= xmax)] = 0. # set values greater than xmax to zero
+  dNdx[np.where(xxArr <= xmin)] = 0. # set values less than xmin to zero
 
-  return dist3
+  return dNdx
