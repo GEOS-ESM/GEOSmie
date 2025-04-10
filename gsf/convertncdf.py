@@ -67,9 +67,13 @@ elts of the scattering law matrix for a Fourier decomposition of the phase matri
   #ncdf.variables['phase_matrix'].long_name = 'Phase matrix elements, ordered over nPol as P11, P22, P33, P44, P12, P34'
   ncdf.variables['phase_matrix'].long_name = 'Phase matrix elements, ordered over nPol as P11, P12, P33, P34, P22, P44'
 
-def createVariablesPyGeosMie(ncdf, numExpand):
-  ncdf.createDimension('m', numExpand)
-  ncdf.createVariable('pmom', 'f8', ('bin','wavelength','rh','p','m'), compression='zlib') # we copy the original moments here
+def createVariablesPyGeosMie(ncdf, numExpand, oppclassic):
+  if oppclassic:
+    ncdf.createDimension('nMom', numExpand)
+    ncdf.createVariable('pmom', 'f8', ('nPol','nMom','radius','rh','lambda'), compression='zlib') # we copy the original moments here
+  else:
+    ncdf.createDimension('m', numExpand)
+    ncdf.createVariable('pmom', 'f8', ('bin','wavelength','rh','p','m'), compression='zlib') # we copy the original moments here
   ncdf.variables['pmom'].long_name =\
 'Moments of the generalized spherical functions order over nPol as the 11, 12, 33, 34, 22, 44 \
 elements of the scattering law matrix for a Fourier decomposition of the phase matrix such as those used in discrete ordinate solutions to the RTE'
@@ -163,7 +167,7 @@ def createVariablesGRASP(ncdf, numExpand):
   ncdf.variables['rh'][0] = 0.0
   ncdf.createVariable('pmom', 'f8', ('nPol', 'nMom', 'radius', 'rh', keydic['lambda']))
 
-def convertData(ncdf, mode, ice, whichproc, radind, rhi, lami, rhop0, num_gauss, linangs):
+def convertData(ncdf, mode, ice, whichproc, radind, rhi, lami, rhop0, num_gauss, linangs, oppclassic):
   linvals = np.zeros([7,len(linangs)])
   linvals[0,:] = linangs
   if mode == 'pygeos':
@@ -173,7 +177,10 @@ def convertData(ncdf, mode, ice, whichproc, radind, rhi, lami, rhop0, num_gauss,
     keys = ['s11', 's22', 's33', 's44', 's12', 's34'] # order Mischenko's code expects
     allvals[0,:] = ang
     for ki, key in enumerate(keys):
-      allvals[ki+1, :] = ncdf.variables[key][radind, lami, rhi, :]
+      if oppclassic:
+        allvals[ki+1, :] = ncdf.variables[key][radind, rhi, lami, :]
+      else:
+        allvals[ki+1, :] = ncdf.variables[key][radind, lami, rhi, :]
 
     # write the temp file
     tempfn = 'tempfile%d.txt'%whichproc
@@ -328,6 +335,18 @@ def processFileRaw(infile, outdir, whichproc, rhop0, mode, ice):
   shutil.copyfile(infile, outfile) # copy the original to the to-be-modified file
   ncdf = netCDF4.Dataset(outfile, 'r+')
 
+# query if file is legacy
+  try:
+    lam = ncdf.variables['wavelength'][:]
+    oppclassic = False
+    radiusNm = 'bin'
+    lamNm = 'wavelength'
+  except:
+    lamNm = 'lambda'
+    lam = ncdf.variables[lamNm][:]
+    oppclassic = True
+    radiusNm = 'radius'
+    print("Operating on a legacy file")
   
   numangs = 181 # for linearly evaluated phase matrix
   linangs = np.linspace(0,180,numangs)
@@ -341,21 +360,23 @@ def processFileRaw(infile, outdir, whichproc, rhop0, mode, ice):
     createVariablesIce(ncdf, numExpand, numangs, linangs)
     keydic = {'nradius': 'nreff', 'nPol': 'nphamat', 'nlambda': 'nlam', 'nMom': 'nmommax', 'lambda': 'wavelen', 'radius': 'reff'}
   elif (mode == 'pygeos'):
-    createVariablesPyGeosMie(ncdf, numExpand)
-    keydic = {'wavelength': 'wavelength', 'bin': 'bin'}
+    createVariablesPyGeosMie(ncdf, numExpand, oppclassic)
+    keydic = {lamNm: lamNm, radiusNm: radiusNm}
   else: # grasp
     createVariablesGRASP(ncdf, numExpand)
     keydic = {'rv': 'rv', 'nPol': 'nPol', 'lambda': 'lambda', 'radius': 'sizeBin'}
 
-  alllambda = ncdf.variables[keydic['wavelength']]
+  alllambda = ncdf.variables[keydic[lamNm]]
 
   print(ncdf.variables.keys())
   for lami, lam in enumerate(alllambda):
     if lami % 10 == 0:
       print("lami %d of %d"%(lami+1, len(alllambda)))
     for rhi, rh in enumerate(ncdf.variables['rh']):
-      for radind, radius in enumerate(ncdf.variables[keydic['bin']]):
-        newdata, linvals = convertData(ncdf, mode, ice, whichproc, radind, rhi, lami, rhop0, num_gauss, linangs)
+      for radind, radius in enumerate(ncdf.variables[keydic[radiusNm]]):
+        newdata, linvals = convertData(ncdf, mode, ice, whichproc, radind, rhi, lami, rhop0, num_gauss, linangs, oppclassic)
+#        print(newdata,linvals)
+#        sys.exit()
             
         """
         Start writing output variables to the file
@@ -364,11 +385,17 @@ def processFileRaw(infile, outdir, whichproc, rhop0, mode, ice):
           if mode == 'legendre':
             ncdf.variables['pmom2'][radind, lami, rhi, npol, :] = ncdf.variables['pmom'][radind, lami, rhi, npol, :]
           pmomdata = newdata[1+ii]
-          lenpmom = len(ncdf.variables['pmom'][radind, lami, rhi, npol, :])
-          pmomdata2 = np.zeros(lenpmom)
-          pmomdata2[:len(pmomdata)] = pmomdata # zero-padded array
+          if oppclassic:
+            lenpmom = len(ncdf.variables['pmom'][npol, :, radind, rhi, lami])
+            pmomdata2 = np.zeros(lenpmom)
+            pmomdata2[:len(pmomdata)] = pmomdata # zero-padded array
+            ncdf.variables['pmom'][npol, :, radind, rhi, lami] = pmomdata2
+          else:
+            lenpmom = len(ncdf.variables['pmom'][radind, lami, rhi, npol, :])
+            pmomdata2 = np.zeros(lenpmom)
+            pmomdata2[:len(pmomdata)] = pmomdata # zero-padded array
+            ncdf.variables['pmom'][radind, lami, rhi, npol, :] = pmomdata2
             
-          ncdf.variables['pmom'][radind, lami, rhi, npol, :] = pmomdata2
           if mode == 'legendre':
             ncdf.variables['phase_matrix'][radind, lami, rhi, npol, :] = linvals[1+ii]
             angs = ncdf.variables['scattering_angle']

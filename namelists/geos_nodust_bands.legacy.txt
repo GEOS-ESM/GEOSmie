@@ -1,0 +1,6 @@
+x/optics_bc.geosmie.legacy.nc
+x/optics_brc.geosmie.legacy.nc
+x/optics_oc.geosmie.legacy.nc
+x/optics_su.geosmie.legacy.nc
+x/optics_ni.geosmie.legacy.nc
+x/optics_ss.geosmie.legacy.nc
