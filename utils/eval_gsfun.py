@@ -169,10 +169,10 @@ class OPTICS(object):
         for i,t in enumerate(self.theta):
             d0, dneg1 = d_mn(m,n,0,t)
             pfunc = d0/(1j**(n-m)).real
-            p12.isel(ang=i).values = self.optics['pmom'].isel(m=0,p=ipol,rh=self.irh,wavelength=self.iwav,bin=self.ibin)*pfunc
+            p12[dict(ang=i)] = self.optics['pmom'].isel(m=0,p=ipol,rh=self.irh,wavelength=self.iwav,bin=self.ibin)*pfunc
             d1, d0 = d_mn(m,n,1,t,dm1=d0,dm2=dneg1)
             pfunc = d1/(1j**(n-m)).real
-            p12.isel(ang=i).values += self.optics['pmom'].isel(m=1,p=ipol,rh=self.irh,wavelength=self.iwav,bin=self.ibin)*pfunc
+            p12[dict(ang=i)] += self.optics['pmom'].isel(m=1,p=ipol,rh=self.irh,wavelength=self.iwav,bin=self.ibin)*pfunc
 
             dm2 = d0
             dm1 = d1
@@ -180,7 +180,7 @@ class OPTICS(object):
                 dfunc, dm2 = d_mn(m,n,s,t,dm1=dm1,dm2=dm2)
                 pfunc = dfunc/(1j**(n-m)).real
 
-                p12.isel(ang=i).values += self.optics['pmom'].isel(m=s,p=ipol,rh=self.irh,wavelength=self.iwav,bin=self.ibin)*pfunc
+                p12[dict(ang=i)] += self.optics['pmom'].isel(m=s,p=ipol,rh=self.irh,wavelength=self.iwav,bin=self.ibin)*pfunc
 
                 dm1 = dfunc
 
@@ -201,10 +201,10 @@ class OPTICS(object):
         for i,t in enumerate(self.theta):
             d0, dneg1 = d_mn(m,n,0,t)
             pfunc = d0/(1j**(n-m)).real
-            a2p3.isel(ang=i).values = (gsf_coef22.isel(m=0)+gsf_coef33.isel(m=0))*pfunc
+            a2p3[dict(ang=i)] = (gsf_coef22.isel(m=0)+gsf_coef33.isel(m=0))*pfunc
             d1, d0 = d_mn(m,n,1,t,dm1=d0,dm2=dneg1)
             pfunc = d1/(1j**(n-m)).real
-            a2p3.isel(ang=1).values += (gsf_coef22.isel(m=1)+gsf_coef33.isel(m=1))*pfunc
+            a2p3[dict(ang=1)] += (gsf_coef22.isel(m=1)+gsf_coef33.isel(m=1))*pfunc
 
             dm2 = d0
             dm1 = d1
@@ -212,7 +212,7 @@ class OPTICS(object):
                 dfunc, dm2 = d_mn(m,n,s,t,dm1=dm1,dm2=dm2)
                 pfunc = dfunc/(1j**(n-m)).real
 
-                a2p3.isel(ang=i).values +=  (gsf_coef22.isel(m=s)+gsf_coef33.isel(m=s))*pfunc
+                a2p3[dict(ang=i)] +=  (gsf_coef22.isel(m=s)+gsf_coef33.isel(m=s))*pfunc
 
                 dm1 = dfunc
 
@@ -224,10 +224,10 @@ class OPTICS(object):
         for i,t in enumerate(self.theta):
             d0, dneg1 = d_mn(m,n,0,t)
             pfunc = d0/(1j**(n-m)).real
-            a2m3.isel(ang=i).values = (gsf_coef22.isel(m=0)-gsf_coef33.isel(m=0))*pfunc
+            a2m3[dict(ang=i)] = (gsf_coef22.isel(m=0)-gsf_coef33.isel(m=0))*pfunc
             d1, d0 = d_mn(m,n,1,t,dm1=d0,dm2=dneg1)
             pfunc = d1/(1j**(n-m)).real
-            a2m3.isel(ang=i).values += (gsf_coef22.isel(m=1)-gsf_coef33.isel(m=1))*pfunc
+            a2m3[dict(ang=i)] += (gsf_coef22.isel(m=1)-gsf_coef33.isel(m=1))*pfunc
 
             dm2 = d0
             dm1 = d1
@@ -235,7 +235,7 @@ class OPTICS(object):
                 dfunc, dm2 = d_mn(m,n,s,t,dm1=dm1,dm2=dm2)
                 pfunc = dfunc/(1j**(n-m)).real
 
-                a2m3.isel(ang=i).values += (gsf_coef22.isel(m=s)-gsf_coef33.isel(m=s))*pfunc
+                a2m3[dict(ang=i)] += (gsf_coef22.isel(m=s)-gsf_coef33.isel(m=s))*pfunc
 
                 dm1 = dfunc
 
@@ -259,10 +259,10 @@ class OPTICS(object):
         for i,t in enumerate(self.theta):
             d0, dneg1 = d_mn(m,n,0,t)
             pfunc = d0/(1j**(n-m)).real
-            p34.isel(ang=i).values = gsf_coef.isel(m=0)*pfunc
+            p34[dict(ang=i)] = gsf_coef.isel(m=0)*pfunc
             d1, d0 = d_mn(m,n,1,t,dm1=d0,dm2=dneg1)
             pfunc = d1/(1j**(n-m)).real
-            p34.isel(ang=i).values +=  gsf_coef.isel(m=1)*pfunc
+            p34[dict(ang=i)] +=  gsf_coef.isel(m=1)*pfunc
 
             dm2 = d0
             dm1 = d1
@@ -270,7 +270,7 @@ class OPTICS(object):
                 dfunc, dm2 = d_mn(m,n,s,t,dm1=dm1,dm2=dm2)
                 pfunc = dfunc/(1j**(n-m)).real
 
-                p34.isel(ang=i).values += gsf_coef.isel(m=s)*pfunc
+                p34[dict(ang=i)] += gsf_coef.isel(m=s)*pfunc
 
                 dm1 = dfunc
 
@@ -342,16 +342,20 @@ class OPTICS(object):
                     ax.set_title('P44=P6')
 
                     # Adjust layout and display
-                    plt.suptitle(self.fname + ' ibin{} irh={} iwav={}'.format(bin,rh,wav))
+                    plt.suptitle(self.fname + ' ibin{:02d} irh={:02d} iwav={:02d}'.format(bin,rh,wav))
                     plt.subplots_adjust(wspace=0.2)
-                    plt.savefig(self.fname + '_ibin{}_irh{}_iwav{}.png'.format(bin,rh,wav),transparent=True)
+                    plt.savefig(self.fname + '_ibin{:02d}_irh{:02d}_iwav{:02d}.png'.format(bin,rh,wav),transparent=True)
                     #plt.show()
                     plt.close()
 if __name__ == '__main__':
 
     inDir =  '/discover/nobackup/pcastell/workspace/aero_work/aist/sbg/aop_testing/ExtDataColarco'
-    inFile = 'optics_SU.v2.0.0.GSFun-129.nc4'
+#    inFile = 'optics_SU.v2.0.0.GSFun-129.nc4'
+    inFile = 'optics_DU.v2.0.0.GSFun-129.nc4'
 
 
     optics = OPTICS(inDir+'/'+inFile,irh=[0],ibin=[0],iwav=[0])
     optics.plotPmatrix(irh=[0],ibin=[0],iwav=[0])
+
+#    optics = OPTICS(inDir+'/'+inFile)
+#    optics.plotPmatrix()
