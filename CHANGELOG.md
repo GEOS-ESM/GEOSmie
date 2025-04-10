@@ -18,21 +18,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Deprecated
 
-## [1.1.3] = 2025-04-4
 
-### Fixed
-- Fixed mass extinction efficiency calculation for kernel
-  driven files 
-
-### Added
-- Added scripting directory for version control of table
-  generation
+## [1.2.0] - 2024-06-06
 
 ### Changed
-- Changed file output names to end in ".nc4" for consistency
-  with v1.0.0 files
-- Changed naming style of band tables for consistency with
-  legacy
+
+- JSON settings files for kernelconversion.py are no longer required to include a "numang"
+  key but now do require "renormUpperX", "angFwdPeak", and "kernelScaleFact"
+- Normalization of P11 prior to integral calculating g is obtained from GRASP kernel 
+  instead of renormalization in kernelconversion.py
+- Integral to calculate g uses scipy.integrate to permit variable scattering angle spacing
+
+### Fixed
+
+- Scattering matrix elements written by convertkernels.py are now normalized such that P11
+  integrates to 4*pi instead of using esoteric GRASP scaling scheme
+- Implemented new scheme relying on normalization of P11 in GRASP kernels to prevent
+  unphysical decrease in g at large x caused by steep forward scattering peak
+- Moved writing of NetCDF inside a with statement so file is not left open on crash
+- Ensured nonzero scattering when it's smaller than number of digits in GRASP kernel files
+
+### Added
+
+- Long names and descriptions to variables in NetCDF file output by convertkernels.py
+- Calculation of graspfactor so kernels with different size parameter spacing can be used 
+- Reading of scattering angles from GRASP kernels so 1 deg spacing is not always assumed
+- New JSON example files for other GRASP kernel types, including the Saito database 
+- Comments at top of convertkernels.py defining keys required in input JSON files
+- .gitignore so that .pyc and .nc4 files are not tracked by git
+
 
 ## [1.1.2] = 2024-04-02
 
