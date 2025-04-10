@@ -344,7 +344,7 @@ class OPTICS(object):
                     # Adjust layout and display
                     plt.suptitle(self.fname + ' ibin{:02d} irh={:02d} iwav={:02d}'.format(bin,rh,wav))
                     plt.subplots_adjust(wspace=0.2)
-                    plt.savefig(self.fname + '_ibin{:02d}_irh{:02d}_iwav{:02d}.png'.format(bin,rh,wav),transparent=True)
+                    plt.savefig(self.fname + '_ibin{:02d}_irh{:02d}_iwav{:02d}.png'.format(bin,rh,wav))
                     #plt.show()
                     plt.close()
 if __name__ == '__main__':
@@ -354,8 +354,8 @@ if __name__ == '__main__':
     inFile = 'optics_DU.v2.0.0.GSFun-129.nc4'
 
 
-    optics = OPTICS(inDir+'/'+inFile,irh=[0],ibin=[0],iwav=[0])
-    optics.plotPmatrix(irh=[0],ibin=[0],iwav=[0])
+#    optics = OPTICS(inDir+'/'+inFile,irh=[0],ibin=[0],iwav=[0])
+#    optics.plotPmatrix(irh=[0],ibin=[0],iwav=[0])
 
-#    optics = OPTICS(inDir+'/'+inFile)
-#    optics.plotPmatrix()
+    optics = OPTICS(inDir+'/'+inFile)
+    optics.plotPmatrix(irh=[0])
