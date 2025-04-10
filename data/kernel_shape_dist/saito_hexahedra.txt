@@ -1,0 +1,2 @@
+# fraction     aspect_ratio  
+1.000000E+00  2.99
