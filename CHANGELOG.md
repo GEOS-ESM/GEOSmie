@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Updated `.gitignore` to ignore more binary file types as well as the recommended Python patterns
+
 ### Removed
 
 ### Deprecated
@@ -20,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.2.1] - 2025-04-10
 
 ### Added
+
 - Added components.yaml and CMakeLists.txt and directory structure to bring
   GMAOpyobs into GEOSmie
 
