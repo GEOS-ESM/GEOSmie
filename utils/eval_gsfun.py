@@ -13,7 +13,7 @@ import xarray as xr
 import numpy as np
 from math import sqrt, cos, factorial
 import matplotlib.pyplot as plt
-from scipy.special import legendre
+from scipy.special import eval_legendre
 
 
 def recur_d_mn(m,n,s,theta):
@@ -161,8 +161,8 @@ class OPTICS(object):
         p11   = xr.DataArray(dims=self.dims,coords=self.coords)
         p11[:] = 0.0
         for s in range(self.nMom):
-            P = legendre(s)            
-            p11  += self.optics['pmom'].isel(p=ipol,m=s,rh=self.irh,wavelength=self.iwav,bin=self.ibin)*P(mu)
+            P = eval_legendre(s,mu)            
+            p11  += self.optics['pmom'].isel(p=ipol,m=s,rh=self.irh,wavelength=self.iwav,bin=self.ibin)*P
 
         return p11
 
