@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
-
+- fixed eval_gsfun script for legendre overflows and bad indexing of scattering phase functions when plotting
 ### Added
 
 ### Changed
