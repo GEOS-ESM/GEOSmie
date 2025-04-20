@@ -319,16 +319,13 @@ def fun(fn, whichproc, rhop0, ice, keydic):
 def processFileRaw(infile, outdir, whichproc, rhop0, mode, ice):
   # mischenko expects the order p11, p22, p33, p44, p12, p34
   #numExpand = 2001 # this needs to match what is set in params.h
-  #numExpand = 300 
+  #numExpand = 1000 
   numExpand = 129 
   num_gauss = 960 # arbitrary? perhaps try adaptive
   # mishchenko's code gives errors in num_gauss is bigger than 1000, though this can probably be changed in params.h
 
   fn = os.path.basename(infile)
-  sfx = fn.split('.')[-1] # file suffix
-  outfn = fn.replace(sfx, 'GSFun.%s'%sfx)
-  if numExpand != 2001:
-    outfn = outfn.replace('.GSFun.%s'%sfx, '.GSFun-%d.%s'%(numExpand, sfx))
+  outfn = fn.replace('nomom.','')
 
   outfile = os.path.join(outdir, outfn)
 

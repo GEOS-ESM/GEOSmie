@@ -30,19 +30,19 @@ mkdir -p ../AerosolOptics/$ver/x
 # Run the cases
 
 # All wavelengths
-  foreach XX (DU BC OC NI SS SU BR)
+  foreach XX (DU BC OC SU BR NI SS)
    ./runoptics.py --name $ver/$XX.$ver.json --dest=$ver> $ver/optics_$XX.$ver.txt &
   end
   wait
 
-# Bands
-  foreach XX (DU BC OC NI SS SU BR)
-   ./runbands.py --filename $ver/optics_$XX.$ver.nc4 --dest=$ver
+# Add phase matrices
+  foreach XX (DU BC OC SU BR NI SS)
+   ./rungsf.py --filename $ver/optics_$XX.$ver.nomom.nc4 --dest=$ver
   end
 
-# Add phase matrices
-  foreach XX (DU BC OC NI SS SU BR)
-   ./rungsf.py --filename $ver/optics_$XX.$ver.nc4 --dest=$ver
+# Bands
+  foreach XX (DU BC OC SU BR NI SS)
+   ./runbands.py --filename $ver/optics_$XX.$ver.nc4 --dest=$ver
   end
 
 # Move files
@@ -50,5 +50,5 @@ mkdir -p ../AerosolOptics/$ver/x
 
 
 # Clean up
-  rm -f runbands.py runoptics.py rungsf.py a.out
+#  rm -f runbands.py runoptics.py rungsf.py a.out
 
