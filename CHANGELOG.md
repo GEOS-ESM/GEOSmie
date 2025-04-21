@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Changed naming convention so that output of runoptics.py files are labeled ".nomom." to 
+  explicitly indicate that expansion moments are not included; post-processing by rungsf.py
+  now results in a filename that strips out ".nomom" and so looks like classic files
+- Modify processing script (proc.v2.0.0.csh) to accommodate the above change
+
 ### Fixed
 - fixed eval_gsfun script for legendre overflows and bad indexing of scattering phase functions when plotting
 ### Added
