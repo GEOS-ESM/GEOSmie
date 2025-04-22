@@ -143,12 +143,12 @@ Longwave bands [cm-1]
 | 30    | 2600  | 3250  |
 
 ### References
-- Bian, H., Chin, M., Hauglustaine, D. A., Schulz, M., Myhre, G., Bauer, S. E., Lund, M. T., Karydis, V. A., Kucsera, T. L., Pan, X., Pozzer, A., Skeie, R. B., Steenrod, S. D., Sudo, K., Tsigaridis, K., Tsimpidi, A. P., and Tsyro, S. G.: Investigation of global particulate nitrate from the AeroCom phaseÃ‚Â III experiment, Atmos Chem Phys, 17, 12911Ã¢€“12940, https://doi.org/10.5194/acp-17-12911-2017, 2017.
-- Chin, M., Ginoux, P., Kinne, S., Torres, O., Holben, B. N., Duncan, B. N., Martin, R. V., Logan, J. A., Higurashi, A., and Nakajima, T.: Tropospheric Aerosol Optical Thickness from the GOCART Model and Comparisons with Satellite and Sun Photometer Measurements, J Atmos Sci, 59, 461Ã¢€“483, https://doi.org/10.1175/1520-0469(2002)059<0461:taotft>2.0.co;2, 2002.
-- Colarco, P., Silva, A. D., Chin, M., and Diehl, T.: Online simulations of global aerosol distributions in the NASA GEOS-4 model and comparisons to satellite and ground-based aerosol optical depth, J Geophys Res Atmospheres 1984 2012, 115, D10S07, https://doi.org/10.1029/2009jd012820, 2010.
-- Colarco, P. R., Nowottnick, E. P., Randles, C. A., Yi, B., Yang, P., Kim, K.-M., Smith, J. A., and Bardeen, C. G.: Impact of radiatively interactive dust aerosols in the NASA GEOS-5 climate model: Sensitivity to dust particle shape and refractive index, J Geophys Res Atmospheres, 119, 753 786, https://doi.org/10.1002/2013jd020046, 2014.
-- Colarco, P. R., GassÃƒÂ³, S., Ahn, C., Buchard, V., Silva, A. M. da, and Torres, O.: Simulation of the Ozone Monitoring Instrument aerosol index using the NASA Goddard Earth Observing System aerosol reanalysis products, Atmos Meas Tech, 10, 4121Ã¢€“4134, https://doi.org/10.5194/amt-10-4121-2017, 2017.
-- Dubovik, O., Sinyuk, A., Lapyonok, T., Holben, B. N., Mishchenko, M., Yang, P., Eck, T. F., Volten, H., MuÃƒÂ±oz, O., Veihelmann, B., Zande, W. J. van der, Leon, J.-F., Sorokin, M., and Slutsker, I.: Application of spheroid models to account for aerosol particle nonsphericity in remote sensing of desert dust, J Geophys Res Atmospheres 1984 2012, 111, https://doi.org/10.1029/2005jd006619, 2006.
-- FITZGERALD, J.: APPROXIMATION FORMULAS FOR EQUILIBRIUM SIZE OF AN AEROSOL PARTICLE AS A FUNCTION OF ITS DRY SIZE AND COMPOSITION AND AMBIENT RELATIVE HUMIDITY, Journal Of Applied Meteorology, 14, 1044 1049, 1975.
+- Bian et al. 2017: https://doi.org/10.5194/acp-17-12911-2017
+- Chin et al. 2002: https://journals.ametsoc.org/view/journals/atsc/59/3/1520-0469_2002_059_0461_taotft_2.0.co_2.xml
+- Colarco et al. 2010: https://doi.org/10.1029/2009jd012820
+- Colarco et al. 2014: https://doi.org/10.1002/2013jd020046
+- Colarco et al. 2017: https://doi.org/10.5194/amt-10-4121-2017
+- Dubovik et al. 2006: https://doi.org/10.1029/2005jd006619
+- Fitzgerald 1975: https://journals.ametsoc.org/view/journals/apme/14/6/1520-0450_1975_014_1044_afftes_2_0_co_2.xml
 - Gerber, H. E.: Relative-Humidity Parameterization of the Navy Aerosol Model (NAM), NRL Report 8956, 1 16, 1985.
-- OPAC: Hess, M., Koepke, P., and Schult, I.: Optical Properties of Aerosols and Clouds: The Software Package OPAC, B Am Meteorol Soc, 79, 831Ã¢€“844, https://doi.org/10.1175/1520-0477(1998)079<0831:opoaac>2.0.co;2, 1998.
+- OPAC: Hess et al. 1998: https://journals.ametsoc.org/view/journals/bams/79/5/1520-0477_1998_079_0831_opoaac_2_0_co_2.xml
