@@ -34,6 +34,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Modify processing script (proc.v2.0.0.csh) to accommodate the above change.
 - Updated `.gitignore` to ignore more binary file types as well as the recommended Python patterns
 
+### Added
+- Added some documentation in the scripts directory of specific optical 
+  property assumptions.
+
 ## [1.2.1] - 2025-04-10
 
 ### Added
