@@ -14,9 +14,28 @@ Table of Contents
 
 # GEOSmie
 
-See [Kemppinen et al. 2022](https://gmao.gsfc.nasa.gov/pubs/docs/Kemppinen1447.pdf) for documentation of
-the approach. Below is a brief summary of the structure and usage of the
-package.
+The GEOSmie package is used to generate aerosol optical property lookup tables (LUTs)
+for use with the GOCART2G package in the GEOS Earth system model and related tools.
+
+In general, two sorts of LUTs are produced for each of the aerosol species simulated.
+The first is the monochromatic table (i.e., optical properties at specified wavelengths)
+which has a form like "optics_XX.vY.Y.Y.nc4" where "XX" is a label indicating the 
+aerosol species and "vY.Y.Y" is some sort of versioning string (e.g., optics_DU.v2.2.2.nc4).
+This file is produced with a call to "runoptics.py" and a subsequent call to "rungsf.py"
+to add the expansion moments of the phase function elements. The monochromatic tables are
+used for higher precision calculation of aerosol optical properties at specified
+wavelengths, for example the aerosol optical depth at 550 nm.
+The second sort of LUT is generated from the monochromatic table and is averaged over
+spectral bands dictated by the GEOS-internal radiative transfer code used for radiative
+flux and forcing calculation (i.e., RRTMG). The wavelength index in that table is related
+to the radiative transfer code band indices in that case. These files are produced by a
+call to "runbands.py". See below for usage examples.
+
+See [Kemppinen et al. 2022](https://gmao.gsfc.nasa.gov/pubs/docs/Kemppinen1447.pdf) for 
+documentation of the approach. Below is a brief summary of the structure and usage of the
+package. More specific information about the optical property assumptions is provided in
+the README.md in the `scripts` subdirectory, which also contains version-specific 
+table generation scripts in an attempt to make this as turnkey as possible.
 
 The package consists of the following parts:
 
