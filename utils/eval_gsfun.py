@@ -116,12 +116,12 @@ class OPTICS(object):
         self.getPmatrix()
 
         # pull out the indices of S-elements selected for plotting later
-        self.s11 = self.optics['s11'].isel(rh=self.irh,bin=self.ibin,wavelength=self.iwav)
-        self.s12 = self.optics['s12'].isel(rh=self.irh,bin=self.ibin,wavelength=self.iwav)
-        self.s22 = self.optics['s22'].isel(rh=self.irh,bin=self.ibin,wavelength=self.iwav)
-        self.s33 = self.optics['s33'].isel(rh=self.irh,bin=self.ibin,wavelength=self.iwav)
-        self.s34 = self.optics['s34'].isel(rh=self.irh,bin=self.ibin,wavelength=self.iwav)
-        self.s44 = self.optics['s44'].isel(rh=self.irh,bin=self.ibin,wavelength=self.iwav)
+        self.s11 = self.optics['p11'].isel(rh=self.irh,bin=self.ibin,wavelength=self.iwav)
+        self.s12 = self.optics['p12'].isel(rh=self.irh,bin=self.ibin,wavelength=self.iwav)
+        self.s22 = self.optics['p22'].isel(rh=self.irh,bin=self.ibin,wavelength=self.iwav)
+        self.s33 = self.optics['p33'].isel(rh=self.irh,bin=self.ibin,wavelength=self.iwav)
+        self.s34 = self.optics['p34'].isel(rh=self.irh,bin=self.ibin,wavelength=self.iwav)
+        self.s44 = self.optics['p44'].isel(rh=self.irh,bin=self.ibin,wavelength=self.iwav)
 
     def getPmatrix(self):
         """
@@ -309,21 +309,21 @@ class OPTICS(object):
                     # normalize S11
                     s11 = self.s11.isel(rh=rh,wavelength=wav,bin=bin)
                     s11n = 2.*s11 / np.trapz(s11 * np.sin(self.theta),self.theta)
-                    ax.plot(self.angle,s11n,label='S11')
+                    ax.plot(self.angle,s11n,label='P11')
                     ax.legend()
                     ax.set_title('P11=P1')           
 
                     # P12
                     ax = axes[0,1]
                     ax.plot(self.angle, self.p12.isel(rh=rh,wavelength=wav,bin=bin)/p11,label='GSF')
-                    ax.plot(self.angle,self.s12.isel(rh=rh,wavelength=wav,bin=bin)/s11,label='S12')
+                    ax.plot(self.angle,self.s12.isel(rh=rh,wavelength=wav,bin=bin)/s11,label='P12')
                     ax.legend()
                     ax.set_title('P12=P2')
 
                     # P22
                     ax = axes[1,1]
                     ax.plot(self.angle, self.p22.isel(rh=rh,wavelength=wav,bin=bin)/p11,label='GSF')
-                    ax.plot(self.angle,self.s22.isel(rh=rh,wavelength=wav,bin=bin)/s11,label='S22')
+                    ax.plot(self.angle,self.s22.isel(rh=rh,wavelength=wav,bin=bin)/s11,label='P22')
                     ax.legend()
                     ax.set_yscale('log')
                     ax.set_title('P22=P5')
@@ -331,21 +331,21 @@ class OPTICS(object):
                     # P33
                     ax = axes[0,2]
                     ax.plot(self.angle, self.p33.isel(rh=rh,wavelength=wav,bin=bin)/p11,label='GSF')
-                    ax.plot(self.angle,self.s33.isel(rh=rh,wavelength=wav,bin=bin)/s11,label='S33')
+                    ax.plot(self.angle,self.s33.isel(rh=rh,wavelength=wav,bin=bin)/s11,label='P33')
                     ax.legend()
                     ax.set_title('P33=P3')
 
                     # P34
                     ax = axes[1,0]
                     ax.plot(self.angle, self.p34.isel(rh=rh,wavelength=wav,bin=bin)/p11,label='GSF')
-                    ax.plot(self.angle,self.s34.isel(rh=rh,wavelength=wav,bin=bin)/s11,label='S34')
+                    ax.plot(self.angle,self.s34.isel(rh=rh,wavelength=wav,bin=bin)/s11,label='P34')
                     ax.legend()
                     ax.set_title('P34=P4')
 
                     # P44
                     ax = axes[1,2]
                     ax.plot(self.angle, self.p44.isel(rh=rh,wavelength=wav,bin=bin)/p11,label='GSF')
-                    ax.plot(self.angle,self.s44.isel(rh=rh,wavelength=wav,bin=bin)/s11,label='S44')
+                    ax.plot(self.angle,self.s44.isel(rh=rh,wavelength=wav,bin=bin)/s11,label='P44')
                     ax.legend()
                     ax.set_title('P44=P6')
 
