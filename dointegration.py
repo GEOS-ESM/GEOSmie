@@ -13,7 +13,7 @@ import particleparams as pp
 """
 These govern how integration and dimensions etc are done, so define them here
 """
-scatkeys = ['s11', 's12', 's22', 's33', 's34', 's44']
+scatkeys = ['p11', 'p12', 'p22', 'p33', 'p34', 'p44']
 #scalarkeys = ['qext', 'qsca', 'qabs', 'g', 'qb', 'csca', 'cext']
 scalarkeys = ['qext', 'qsca', 'qabs', 'qb', 'g', 'csca', 'cext']
 extrakeys = ['ssa', 'bsca', 'bext', 'bbck', 'refreal', 'refimag', 'lidar_ratio']
@@ -242,23 +242,23 @@ def createNCDF(ncdfID, oppfx, rarr, rharr, lambarr, ang, oppclassic):
   'long_name': 'scattering angle' 
   }
 
-  vardict['s11'] = {'units': 'dimensionless', \
-  'long_name': 'S11 element of the scattering matrix'
+  vardict['p11'] = {'units': 'dimensionless', \
+  'long_name': 'P11 element of the normalized scattering matrix'
   }
-  vardict['s12'] = {'units': 'dimensionless', \
-  'long_name': 'S12 element of the scattering matrix'
+  vardict['p12'] = {'units': 'dimensionless', \
+  'long_name': 'P12 element of the normalized scattering matrix'
   }
-  vardict['s22'] = {'units': 'dimensionless', \
-  'long_name': 'S22 element of the scattering matrix'
+  vardict['p22'] = {'units': 'dimensionless', \
+  'long_name': 'P22 element of the normalized scattering matrix'
   }
-  vardict['s33'] = {'units': 'dimensionless', \
-  'long_name': 'S33 element of the scattering matrix'
+  vardict['p33'] = {'units': 'dimensionless', \
+  'long_name': 'P33 element of the normalized scattering matrix'
   }
-  vardict['s34'] = {'units': 'dimensionless', \
-  'long_name': 'S34 element of the scattering matrix'
+  vardict['p34'] = {'units': 'dimensionless', \
+  'long_name': 'P34 element of the normalized scattering matrix'
   }
-  vardict['s44'] = {'units': 'dimensionless', \
-  'long_name': 'S44 element of the scattering matrix'
+  vardict['p44'] = {'units': 'dimensionless', \
+  'long_name': 'P44 element of the normalized scattering matrix'
   }
   vardict['qsca'] = {'units': 'dimensionless', \
   'long_name':'scattering efficiency'
@@ -372,12 +372,12 @@ def createNCDF(ncdfID, oppfx, rarr, rharr, lambarr, ang, oppclassic):
 
   # for each NetCDF variable, assign one dimension type based on the dimension types dictionary
   ncdfVariableDimensionTypes = {\
-  "s11": "scatteringFun",\
-  "s12": "scatteringFun",\
-  "s22": "scatteringFun",\
-  "s33": "scatteringFun",\
-  "s34": "scatteringFun",\
-  "s44": "scatteringFun",\
+  "p11": "scatteringFun",\
+  "p12": "scatteringFun",\
+  "p22": "scatteringFun",\
+  "p33": "scatteringFun",\
+  "p34": "scatteringFun",\
+  "p44": "scatteringFun",\
   "qsca": "scalarScattering",\
   "qabs": "scalarScattering",\
   "qext": "scalarScattering",\
@@ -881,7 +881,7 @@ def fun(partID0, datatype, oppfx, oppclassic):
           keys = ['ext', 'abs', 'sca', 'qext', 'qabs', 'qsca', 'qb', 'g', 'cext', 'csca', 'cabs']
 #          keys = ['ext', 'abs', 'sca', 'qext', 'qsca', 'qb', 'g', 'cext', 'csca']
           scatelekeys = ['scama']
-          scatelems = ['s11', 's22', 's33', 's44', 's12', 's34'] # order Mischenko's code expects
+          scatelems = ['p11', 'p22', 'p33', 'p44', 'p12', 'p34'] # order Mischenko's code expects
           ret1 = {}
           for kk in keys:
             valmat = ret0[kk][:,:,:]
@@ -947,7 +947,19 @@ def fun(partID0, datatype, oppfx, oppclassic):
         ret['rLow'] = rLow
         ret['rUp'] = rUp
 
-        pbackorder = ['s11', 's12', 's33', 's34', 's22', 's44']
+        """
+        Calculate a posteriori normalization of phase matrix elements
+        """
+        theta = np.radians(ang)
+        p11n = 2.*ret['p11'] / np.trapz(ret['p11'] * np.sin(theta),theta)
+        ret['p12'] = ret['p12']*p11n/ret['p11']
+        ret['p22'] = ret['p22']*p11n/ret['p11']
+        ret['p33'] = ret['p33']*p11n/ret['p11']
+        ret['p34'] = ret['p34']*p11n/ret['p11']
+        ret['p44'] = ret['p44']*p11n/ret['p11']
+        ret['p11'] = p11n
+
+        pbackorder = ['p11', 'p12', 'p33', 'p34', 'p22', 'p44']
         ret['pback'] = np.array([ret[key][-1] for key in pbackorder])
 
         ret['growth_factor'] = gf
@@ -1126,21 +1138,9 @@ def integratePSD(xxarr, rawret, psd, fracs, lam, reff0, rhop0, rhop):
       if key in scatkeys:
         thisvals = rawret[fraci][key]
         thisret[key] = np.dot(thisvals.T, psd[fraci]) # integrate
-# PRC: tried the block below, didn't like it
-#        thisq    = np.array(rawret[fraci]['qsca'])
-#        beta     = np.sum(thisq*rarr2)*np.pi
-#        fac      = 1./beta
-#        if(key == 's11'):
-#          print(key, thisvals[0,370], fac)
-#        thiskey  = np.zeros((thisvals.shape))
-#        for i in range(0,371):
-#          thiskey[:,i]  = thisvals[:,i]*thisarea*(4.*np.pi)
-#        thisret[key] = np.dot(thiskey.T, psd[fraci])*fac*thisret['qsca']/(4.*np.pi)
 
       elif key in qbwght:
         thisret[key] = p11back*thisret['qsca']/(4.*np.pi)
-#        print(thisret[key])
-#        exit()
       else:
         """
         For external mixing we first need to integrate over the individual PSD, 

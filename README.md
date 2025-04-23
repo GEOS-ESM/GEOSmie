@@ -14,15 +14,38 @@ Table of Contents
 
 # GEOSmie
 
-See [Kemppinen et al. 2002](https://gmao.gsfc.nasa.gov/pubs/docs/Kemppinen1447.pdf) for documentation of
-the approach. Below is a brief summary of the structure and usage of the
-package.
+The GEOSmie package is used to generate aerosol optical property lookup tables (LUTs)
+for use with the GOCART2G package in the GEOS Earth system model and related tools. It
+supports table generation either from direct Mie calculations or from integration over
+externally provided kernels in a specified format.
+
+In general, two sorts of LUTs are produced for each of the aerosol species simulated:
+- The first is the monochromatic table (i.e., optical properties at specified wavelengths)
+which has a form like `optics_XX.vY.Y.Y.nc4` where `XX` is a label indicating the 
+aerosol species and `vY.Y.Y` is some sort of versioning string (e.g., `optics_DU.v2.0.0.nc4`).
+This file is produced with a call to `runoptics.py` and a subsequent call to `rungsf.py`
+to add the expansion moments of the phase function elements. The monochromatic tables are
+used for higher precision calculation of aerosol optical properties at specified
+wavelengths, for example the aerosol optical depth at 550 nm.
+- The second sort of LUT is generated from the monochromatic table and is averaged over
+spectral bands dictated by the GEOS-internal radiative transfer code used for radiative
+flux and forcing calculation (i.e., RRTMG). The tables have a form like `optics_XX.vY.Y.Y.RRTMG.nc4`
+(e.g., `optics_DU.v2.0.0.RRTMG.nc4`). The wavelength index in that table is related
+to the radiative transfer code band indices in that case. These files are produced by a
+call to `runbands.py`. See below for usage examples.
+
+See [Kemppinen et al. 2022](https://gmao.gsfc.nasa.gov/pubs/docs/Kemppinen1447.pdf) for 
+documentation of the approach. Below is a brief summary of the structure and usage of the
+package. More specific information about the optical property assumptions is provided in
+the `README.md` in the `scripts` subdirectory, which also contains version-specific 
+table generation scripts in an attempt to make this as turnkey as possible.
 
 The package consists of the following parts:
 
 - Mie code (pymiecoated/)
 - Main code (root directory), which can calculate single-scattering and bulk optical properties for both individual wavelengths and wavelength bands
 - Generalized spherical function expansion code (gsf/)
+- Kernel generation code (root directory)
 
 ## Mie code
 
@@ -118,7 +141,7 @@ External kernels (e.g. GRASP spheroids) have to be converted into a specific Net
 A tool is provided for converting kernels from GRASP-like format to the GEOSmie-compatible NetCDF file.
 
 ```bash
-python runkernelconversion.py --filename data/kernelconversion/filename.json --dest /path/to/output/directory
+./runkernelconversion.py --filename data/kernelconversion/filename.json --dest /path/to/output/directory
 ```
 
 where filename.json is a parameter file that specifies various aspects on how the kernels should be read, and has to be updated if the incoming kernel format changes in virtually any way. Sample JSON files are provided for GRASP kernels (grasp.json) and GRASP-like Saito et al. kernels (saito.json).

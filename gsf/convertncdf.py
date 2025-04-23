@@ -12,7 +12,7 @@ General working concept:
 -open a netcdf file
 -loop over all lambda
 -loop over all RH
--read in s11, s12, etc, write them in a temp table file, run Mishchenko's code for that file,
+-read in p11, p12, etc, write them in a temp table file, run Mishchenko's code for that file,
 read in Mishchenko's output, save that output back to NetCDF under another variable name
 (or separate file)
 -delete temporary file and Mischenko's output
@@ -174,7 +174,7 @@ def convertData(ncdf, mode, ice, whichproc, radind, rhi, lami, rhop0, num_gauss,
     ang = ncdf.variables['ang'][:]
     numang = len(ang) 
     allvals = np.zeros([7,numang])
-    keys = ['s11', 's22', 's33', 's44', 's12', 's34'] # order Mischenko's code expects
+    keys = ['p11', 'p22', 'p33', 'p44', 'p12', 'p34'] # order Mischenko's code expects
     allvals[0,:] = ang
     for ki, key in enumerate(keys):
       if oppclassic:

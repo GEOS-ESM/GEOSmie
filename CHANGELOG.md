@@ -7,23 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
-- Changed naming convention so that output of runoptics.py files are labeled ".nomom." to 
-  explicitly indicate that expansion moments are not included; post-processing by rungsf.py
-  now results in a filename that strips out ".nomom" and so looks like classic files
-- Modify processing script (proc.v2.0.0.csh) to accommodate the above change
-
 ### Fixed
-- fixed eval_gsfun script for legendre overflows and bad indexing of scattering phase functions when plotting
+
 ### Added
 
 ### Changed
 
-- Updated `.gitignore` to ignore more binary file types as well as the recommended Python patterns
-
 ### Removed
 
 ### Deprecated
+
+## [1.2.2] - 2025-04-22
+
+### Fixed
+- fixed eval_gsfun script for legendre overflows and bad indexing of scattering phase functions when plotting
+
+### Changed
+- Changed output variables of runoptics.py from s11, s12, etc. to p11, p12, etc. 
+  and applied an a posteriori normalization to them. These are now directly the
+  the phase function elements at the indicated angles as f(bin,wavelength,rh,ang)
+- Changed rungsf.py and utils/eval_gsfun.py to accommodate change in phase function
+  element naming as above.
+- Changed naming convention so that output of runoptics.py files are labeled ".nomom." to 
+  explicitly indicate that expansion moments are not included; post-processing by rungsf.py
+  now results in a filename that strips out ".nomom" and so looks like classic files.
+- Modify processing script (proc.v2.0.0.csh) to accommodate the above change.
+- Updated `.gitignore` to ignore more binary file types as well as the recommended Python patterns
+
+### Added
+- Added some documentation in the scripts directory of specific optical 
+  property assumptions.
 
 ## [1.2.1] - 2025-04-10
 
