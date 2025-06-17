@@ -7,7 +7,7 @@ import os
 import numba
 import hydrophobic
 import sys
-from pymiecoated.mie_coated import MultipleMie
+from pymiecoated.pymiecoated.mie_coated import MultipleMie
 import particleparams as pp
 
 """
