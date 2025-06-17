@@ -8,9 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
-
+- fixed top level cmake
+- fix import of pymiecoated in dointegration
 ### Added
-
+- interpolate dust scattering matrix to same angles as mie particles
 ### Changed
 
 ### Removed
