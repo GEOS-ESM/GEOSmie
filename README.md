@@ -3,7 +3,6 @@ Table of Contents
 
 * [GEOSmie](#geosmie)
    * [How to build GEOSmie](#how-to-build-geosmie)
-   * [Mie code](#mie-code)
    * [Main code](#main-code)
       * [Calculations at individual wavelengths](#calculations-at-individual-wavelengths)
       * [Calculations over wavelength bands](#calculations-over-wavelength-bands)
