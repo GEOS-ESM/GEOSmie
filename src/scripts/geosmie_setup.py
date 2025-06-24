@@ -120,7 +120,7 @@ def create_experiment_directory():
             shutil.copytree(p, experiment_directory / os.path.basename(p),dirs_exist_ok=True)
 
     # Copy gsf scripts to the experiment directory
-    config_filepath = current_directory.parent / "gsf/*"
+    config_filepath = current_directory / "gsf/*"
     for p in glob.glob(str(config_filepath)):
         if os.path.isfile(p):
             shutil.copy(p, experiment_directory)
