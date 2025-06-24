@@ -148,19 +148,22 @@ def create_experiment_directory():
         print(f"You can change the group id in the SLURM script available in the experiment directory")
         print()
 
-    loc_filename = "geosmie_run.j"
+    loc_filename = "geosmie_runoptics.j"
     target_dir = experiment_directory
     dict_words = {"@SRCDIR": str(source_directory), "@GROUPID": my_group}
     search_reaplace_in_file(loc_filename, target_dir, dict_words)
+
+    loc_filename2 = "geosmie_runbands.j"
+    target_dir = experiment_directory
+    dict_words = {"@SRCDIR": str(source_directory), "@GROUPID": my_group}
+    search_reaplace_in_file(loc_filename2, target_dir, dict_words)
+
 
     print()
     print("-"*70)
     print(f"The experiment directory was created: \n\n\t {experiment_directory}")
     print()
-    print(f"Go to the folder and if necessary edit the file {loc_filename}.")
-    print()
-    print("From the experiment directory, issue the command: ")
-    print(f"   sbatch {loc_filename}")
+    print(f"Go to the folder and if necessary edit the file {loc_filename} or {loc_filename2}.")
     print("-"*70)
     print()
 
