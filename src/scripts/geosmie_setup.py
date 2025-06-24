@@ -29,6 +29,7 @@ def print_message():
 
         - an experiment name (exp_name)
         - the run script you want to start from
+        - the location of GRASP dust kernels
  
     It will then create an experiment directory that has a self-contained and ready
     to use run script
@@ -63,6 +64,7 @@ def search_reaplace_in_file(loc_filename: str,
         for key in dict_words:
             file_content = file_content.replace(key, dict_words[key])
             print(f"Successfully replaced '{key}' with '{dict_words[key]}' in '{new_filename}'.")
+            print("")
 
         with open(new_filename, 'w') as file:
             file.write(file_content)
@@ -135,6 +137,17 @@ def create_experiment_directory():
     target_dir = experiment_directory
     dict_words = {"@SRCDIR": str(source_directory)}
     search_reaplace_in_file(script_name, target_dir, dict_words)
+
+    # Dust kernels
+    dkernel = "/home/pcolarco/geos_aerosols/pcolarco/GEOSmie/kernels"
+    kernel_dir = input(f"Provide the location of the GRASP dust kernels [default: {dkernel}]:  ")
+    kernel_dir = kernel_dir.strip()
+    if not kernel_dir:
+        kernel_dir = dkernel
+
+    # copy kernels over
+    os.symlink(kernel_dir, experiment_directory / os.path.basename(kernel_dir), target_is_directory=False)
+
 
     print()
     print("-"*70)
