@@ -151,7 +151,7 @@ above command.
 
 ## Setup and experiment
 
-Navigate to `install/bin` and run the `geosmies_setup` script:
+Navigate to `install/bin` and run the `geosmie_setup` script:
 
 ```
 ./geosmie_setup.py
@@ -160,26 +160,6 @@ Navigate to `install/bin` and run the `geosmies_setup` script:
 This will create an independent experiment directory for running GEOSmie.
 You can choose between starting scripts found in `src/scripts` as a template.
 These scripts implement the following ways to run GEOSmie.
-
-## Mie code
-
-Before any spherical aerosol calculations can be done the Mie code needs to be installed.
-
-Starting in the root directory of this repository:
-
-```bash
-cd pymiecoated
-python setup.py install
-```
-
-In some systems the following may be needed instead:
-
-```bash
-python setup.py install --user
-```
-
-The Mie code does not need to be used directly; runoptics.py calls it as needed. The functions within the module can be used directly to run custom Mie simulations but that is beyond the scope of this README.
-
 
 ## Main code
 
@@ -225,16 +205,7 @@ The generalized spherical function expansion code is needed to convert the phase
 
 The code uses spher_expan.f code by Michael Mishchenko. Before conversions can be done the Fortran code needs to be compiled. 
 
-Starting in the root directory of this repository:
-
-```bash
-cd gsf
-gfortran spher_expan.f
-```
-
-Other compilers beyond gfortran may work. Testing has been performed with gfortran 11.2.0 on Gentoo.
-
-To run the conversion code, assuming the code has been compiled and you are in the gsf/ subdirectory:
+To run the conversion code:
 
 ```bash
 ./rungsf.py --filename ../filename.nc
