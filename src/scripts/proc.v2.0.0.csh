@@ -13,25 +13,16 @@ source $SRC_DIR/env@/g5_modules
 set ver = "v2.0.0"
 
 mkdir $ver
-mkdir -p ../AerosolOptics/$ver/x
+mkdir -p ./AerosolOptics/$ver/x
 
 # Link the desired files
-  ln -s ../../geosparticles/bc.json  $ver/BC.$ver.json
-  ln -s ../../geosparticles/oc.json  $ver/OC.$ver.json
-  ln -s ../../geosparticles/ni.json  $ver/NI.$ver.json
-  ln -s ../../geosparticles/su.json  $ver/SU.$ver.json
-  ln -s ../../geosparticles/ss.json  $ver/SS.$ver.json
-  ln -s ../../geosparticles/brc.json $ver/BR.$ver.json
-  ln -s ../../geosparticles/du-grasp_spheroid-lognormal.json $ver/DU.$ver.json
-
-# Copy the relevant drivers here
-  setenv PYTHONPATH /home/colarco/GEOSmie:/home/colarco/GEOSmie/gsf:$PYTHONPATH
-  ln -s ../data data
-  ln -s ../kernels kernels
-  \cp -f ../runbands.py .
-  \cp -f ../runoptics.py .
-  \cp -f ../gsf/rungsf.py .
-  \cp -f ../gsf/a.out .
+  ln -s ${PWD}/geosparticles/bc.json  $ver/BC.$ver.json
+  ln -s ${PWD}/geosparticles/oc.json  $ver/OC.$ver.json
+  ln -s ${PWD}/geosparticles/ni.json  $ver/NI.$ver.json
+  ln -s ${PWD}/geosparticles/su.json  $ver/SU.$ver.json
+  ln -s ${PWD}/geosparticles/ss.json  $ver/SS.$ver.json
+  ln -s ${PWD}/geosparticles/brc.json $ver/BR.$ver.json
+  ln -s ${PWD}/geosparticles/du-grasp_spheroid-lognormal.json $ver/DU.$ver.json
 
 # Run the cases
 
@@ -52,9 +43,5 @@ mkdir -p ../AerosolOptics/$ver/x
   end
 
 # Move files
-  \mv -f $ver/*nc4 ../AerosolOptics/$ver/x
-
-
-# Clean up
-#  rm -f runbands.py runoptics.py rungsf.py a.out
+  \mv -f $ver/*nc4 ./AerosolOptics/$ver/x
 
