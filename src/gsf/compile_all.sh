@@ -1,2 +1,2 @@
 # compile gsf
-gfortran -o gsf/a.out gsf/spher_expan.f
+gfortran -o gsf/spher_expan.x gsf/spher_expan.f
