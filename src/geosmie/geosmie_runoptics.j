@@ -26,6 +26,13 @@ source $SRC_DIR/env@/g5_modules
 
 #######################################################################
 #          Run the GEOSMIE code
+# To calculate single-scattering properties at individual wavelengths
+# Where file.json defines all of the parameters of the calculation. 
+# ".json" can be omitted from the runoptics.py command as a convenience. 
+# See JSON examples under geosparticles/ for current GEOS aerosol particles.
+
 #######################################################################
 
 ./runoptics.py --name path/to/file.json
+
+
