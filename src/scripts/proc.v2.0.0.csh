@@ -1,5 +1,11 @@
 #!/bin/tcsh
 
+# setup environment
+setenv SRC_DIR @SRCDIR
+setenv PYTHONPATH ${SRC_DIR}/install/lib/Python
+
+source $SRC_DIR/env@/g5_modules
+
 # Script to reproduce v2.0.0 optics tables
 # JSON files live in geosparticles
 # Output will be placed in AerosolOptics/v2.0.0/x directory
