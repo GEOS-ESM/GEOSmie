@@ -104,7 +104,7 @@ especially for repositories with a large history like MAPL.
 
 #### Build the Model
 
-##### Load Compiler, MPI Stack, and Baselibs
+##### Step 1: Load Compiler, MPI Stack, and Baselibs
 
 On tcsh:
 ```
@@ -117,7 +117,7 @@ source env@/g5_modules.sh
 
 ##### Create Build Directory
 
-##### Run CMake
+##### Step 2: Run CMake
 
 CMake generates the Makefiles needed to build the model.
 
@@ -139,7 +139,7 @@ To build with debugging flags add:
 ```
 to the cmake line.
 
-##### Build and Install with Make
+##### Step 3: Build and Install with CMake
 
 ```
 cmake --build build --target install -j6
@@ -148,9 +148,9 @@ cmake --build build --target install -j6
 If you put your build in a directory other than `build` use that in the
 above command.
 
-## Setup and experiment
+## Setup an experiment
 
-Navigate to `install/bin` and run the `geosmie_setup` script:
+Navigate to `install/bin` and run the `geosmie_setup` script and follow the prompts:
 
 ```
 ./geosmie_setup.py
