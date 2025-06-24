@@ -106,7 +106,7 @@ def create_experiment_directory():
     experiment_directory.mkdir(parents=True, exist_ok=True)
 
     # Copy the geosparticles configuration files to the experiment directory.
-    config_filepath = current_directory.parent.parent / "etc/geosparticles"
+    config_filepath = source_directory / "install/etc/geosparticles"
     shutil.copytree(config_filepath, experiment_directory / config_filepath.name,dirs_exist_ok=True)
 
     # Copy geosmie scripts to the experiment directory
@@ -127,7 +127,7 @@ def create_experiment_directory():
 
     # Get the template script
     nscript = "proc.v2.0.0.csh"
-    script_name = input(f"Provide the script name [default:{nscript}]:  ")
+    script_name = input(f"Provide the script name [default: {nscript}]:  ")
     script_name = script_name.strip()
     if not script_name:
         script_name = nscript
