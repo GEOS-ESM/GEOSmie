@@ -150,7 +150,7 @@ above command.
 
 ## Setup an experiment
 
-Navigate to `install/bin` and run the `geosmie_setup` script and follow the prompts:
+Navigate to `install/bin`. Run the `geosmie_setup` script and follow the prompts:
 
 ```
 ./geosmie_setup.py
