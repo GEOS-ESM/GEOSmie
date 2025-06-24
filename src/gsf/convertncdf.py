@@ -185,7 +185,7 @@ def convertData(ncdf, mode, ice, whichproc, radind, rhi, lami, rhop0, num_gauss,
     # write the temp file
     tempfn = 'tempfile%d.txt'%whichproc
     np.savetxt(tempfn, allvals.T)
-    os.system('./a.out %s > /dev/null'%tempfn)
+    os.system('./spher_expan.x %s > /dev/null'%tempfn)
     newdata = np.loadtxt('%s.expan_coeff'%tempfn, skiprows=1, unpack=True)
   elif mode == 'legendre':
     gpoints, gweights = leggauss(num_gauss)
@@ -215,7 +215,7 @@ def convertData(ncdf, mode, ice, whichproc, radind, rhi, lami, rhop0, num_gauss,
     # write the temp file
     tempfn = 'tempfile%d.txt'%whichproc
     np.savetxt(tempfn, allvals.T)
-    os.system('./a.out %s > /dev/null'%tempfn)
+    os.system('./spher_expan.x %s > /dev/null'%tempfn)
     newdata = np.loadtxt('%s.expan_coeff'%tempfn, skiprows=1, unpack=True)
 
     if ice: # for ice we have to calculate extra variables
@@ -291,7 +291,7 @@ def convertData(ncdf, mode, ice, whichproc, radind, rhi, lami, rhop0, num_gauss,
     # write the temp file
     tempfn = 'tempfile%d.txt'%whichproc
     np.savetxt(tempfn, allvals.T)
-    os.system('./a.out %s > /dev/null'%tempfn)
+    os.system('./spher_expan.x %s > /dev/null'%tempfn)
     newdata = np.loadtxt('%s.expan_coeff'%tempfn, skiprows=1, unpack=True)
 
   return newdata, linvals
