@@ -2,6 +2,7 @@ Table of Contents
 =================
 
 * [GEOSmie](#geosmie)
+   * [How to build GEOSmie](#how-to-build-geosmie)
    * [Mie code](#mie-code)
    * [Main code](#main-code)
       * [Calculations at individual wavelengths](#calculations-at-individual-wavelengths)
@@ -46,6 +47,119 @@ The package consists of the following parts:
 - Main code (root directory), which can calculate single-scattering and bulk optical properties for both individual wavelengths and wavelength bands
 - Generalized spherical function expansion code (gsf/)
 - Kernel generation code (root directory)
+
+## How to Build GEOSmie
+### Preliminary Steps
+
+#### Load Build Modules
+
+In your `.bashrc` or `.tcshrc` or other rc file add a line:
+
+##### NCCS
+
+```
+module use -a /discover/swdev/gmao_SIteam/modulefiles-SLES15
+```
+
+##### NAS
+```
+module use -a /nobackup/gmao_SIteam/modulefiles
+```
+
+##### GMAO Desktops
+
+On the GMAO desktops, the SI Team modulefiles should automatically be
+part of running `module avail` but if not, they are in:
+
+```
+module use -a /ford1/share/gmao_SIteam/modulefiles
+```
+
+Also do this in any interactive window you have. This allows you to get module files needed to correctly checkout and build the model.
+
+Now load the `GEOSenv` module:
+```
+module load GEOSenv
+```
+which obtains the latest `git`, `CMake`, etc. modules needed to build.
+
+### Use mepo to clone the repository
+
+[Mepo](https://github.com/GEOS-ESM/mepo) is a multiple repository tool available on github.
+
+```
+mepo clone git@github.com:GEOS-ESM/GEOSmie.git
+```
+
+##### Slow clones
+
+If you notice your clone is taking a while, we recommend running:
+
+```
+mepo config set clone.partial blobless
+```
+
+This is a one-time command that tells mepo to use blobless clones for all future clones. 
+Blobless clones are much faster than the default clone method, 
+especially for repositories with a large history like MAPL.
+
+#### Build the Model
+
+##### Load Compiler, MPI Stack, and Baselibs
+
+On tcsh:
+```
+source env@/g5_modules
+```
+or on bash:
+```
+source env@/g5_modules.sh
+```
+
+##### Create Build Directory
+
+##### Run CMake
+
+CMake generates the Makefiles needed to build the model.
+
+```
+./cmake_it
+```
+
+This will build the code in `build/` and will install in `install`.
+
+NOTE: You can choose any directory for your build and install in `cmake_it`. That
+said, what you pass to `--install-prefix=` *MUST* be a full path.
+
+###### Building with Debugging Flags
+
+To build with debugging flags add:
+
+```
+-DCMAKE_BUILD_TYPE=Debug
+```
+to the cmake line.
+
+##### Build and Install with Make
+
+```
+cmake --build build --target install -j6
+```
+
+If you put your build in a directory other than `build` use that in the
+above command.
+
+## Setup and experiment
+
+Navigate to `install/bin` and run the `geosmies_setup` script:
+
+```
+./geosmie_setup.py
+```
+
+This will create an independent experiment directory for running GEOSmie.
+You can choose between starting scripts found in `src/scripts` as a template.
+These scripts implement the following ways to run GEOSmie.
 
 ## Mie code
 
@@ -145,3 +259,12 @@ A tool is provided for converting kernels from GRASP-like format to the GEOSmie-
 ```
 
 where filename.json is a parameter file that specifies various aspects on how the kernels should be read, and has to be updated if the incoming kernel format changes in virtually any way. Sample JSON files are provided for GRASP kernels (grasp.json) and GRASP-like Saito et al. kernels (saito.json).
+
+## Contributing
+
+Please check out our [contributing guidelines](CONTRIBUTING.md).
+
+## License
+
+All files are currently licensed under the Apache-2.0 license, see [`LICENSE`](LICENSE).
+
