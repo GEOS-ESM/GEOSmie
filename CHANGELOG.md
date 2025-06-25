@@ -10,14 +10,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 ### Added
-- output dust phase matrix at same angular resolution as mie particles
 
 ### Changed
-- refactor to use cmake for installation
 
 ### Removed
 
 ### Deprecated
+
+## [2.0.0] - 2025-06-25
+
+### Added
+- output dust phase matrix at same angular resolution as mie particles
+
+### Changed
+- refactor to use cmake for installation
 
 ## [1.2.2] - 2025-04-22
 
