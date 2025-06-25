@@ -1,7 +1,7 @@
 import netCDF4
 import numpy as np
 import bisect
-from scipy.interpolate import interp1d
+from scipy.interpolate import interp1d, CubicSpline
 from scipy.stats import lognorm
 import os
 import numba
@@ -721,12 +721,14 @@ def fun(partID0, datatype, oppfx, oppclassic):
   """
 
   # Angles phase functions will be written at
+  # Define output scattering angles
+  ang1 = np.linspace(0., 1., 100, endpoint=False)
+  ang2 = np.linspace(1., 10., 100, endpoint=False)
+  ang3 = np.linspace(10., 180., 171, endpoint=True)
+  angmie = np.concatenate([ang1,ang2,ang3])
   if mode =='mie':
     # Define output scattering angles
-    ang1 = np.linspace(0., 1., 100, endpoint=False)
-    ang2 = np.linspace(1., 10., 100, endpoint=False)
-    ang3 = np.linspace(10., 180., 171, endpoint=True)
-    ang = np.concatenate([ang1,ang2,ang3])
+    ang = angmie
   elif useGrasp:
     ang = np.linspace(0., 180., 181)
 
@@ -734,7 +736,7 @@ def fun(partID0, datatype, oppfx, oppclassic):
   minlam = lambarr[0]
   maxlam = lambarr[-1]
 
-  opncdf = createNCDF(ncdfID, oppfx, radiusarr, rh, lambarr, ang[:], oppclassic)
+  opncdf = createNCDF(ncdfID, oppfx, radiusarr, rh, lambarr, angmie[:], oppclassic)
 
   if useGrasp:
     # if we are using a spheroid kernel system then override xxarr with
@@ -950,6 +952,15 @@ def fun(partID0, datatype, oppfx, oppclassic):
         """
         Calculate a posteriori normalization of phase matrix elements
         """
+        if useGrasp:
+            # interpolate Grasp phase matrix to same angles as mie particles
+            costarrmie = np.cos(np.radians(angmie))
+            for key in scatelems:
+                cs = CubicSpline(costarr[::-1],ret[key][::-1])   # reverse because CS requires ascending x-values
+                ret[key] = cs(costarrmie[::-1])[::-1]  # reverse it back after interpolation
+
+            ang = angmie
+        
         theta = np.radians(ang)
         p11n = 2.*ret['p11'] / np.trapz(ret['p11'] * np.sin(theta),theta)
         ret['p12'] = ret['p12']*p11n/ret['p11']

@@ -1,5 +1,5 @@
 #
-# Top cmake rules for GMAOpyobs
+# Top cmake rules for GEOSmie
 #
 
 # Boiler plate preamble
@@ -46,7 +46,6 @@ if (NOT CMAKE_BUILD_TYPE)
   
     include (esma)
 
-    set (PYOBS_STANDALONE TRUE)
   endif ()
    ecbuild_declare_project()
 
@@ -75,8 +74,3 @@ if (NOT CMAKE_BUILD_TYPE)
      DESTINATION  ${CMAKE_INSTALL_PREFIX}
    )
 
-# Adds ability to tar source
-# --------------------------
-  if (PYOBS_STANDALONE)
-    include(esma_cpack OPTIONAL)
-  endif ()  

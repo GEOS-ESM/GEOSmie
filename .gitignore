@@ -147,6 +147,13 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+/env/
+/@env/
+/env@/
+/cmake/
+/@cmake/
+/cmake@/
+/.mepo/
 
 # Spyder project settings
 .spyderproject
