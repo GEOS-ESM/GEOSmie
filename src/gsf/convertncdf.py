@@ -12,7 +12,7 @@ General working concept:
 -open a netcdf file
 -loop over all lambda
 -loop over all RH
--read in s11, s12, etc, write them in a temp table file, run Mishchenko's code for that file,
+-read in p11, p12, etc, write them in a temp table file, run Mishchenko's code for that file,
 read in Mishchenko's output, save that output back to NetCDF under another variable name
 (or separate file)
 -delete temporary file and Mischenko's output
@@ -174,7 +174,7 @@ def convertData(ncdf, mode, ice, whichproc, radind, rhi, lami, rhop0, num_gauss,
     ang = ncdf.variables['ang'][:]
     numang = len(ang) 
     allvals = np.zeros([7,numang])
-    keys = ['s11', 's22', 's33', 's44', 's12', 's34'] # order Mischenko's code expects
+    keys = ['p11', 'p22', 'p33', 'p44', 'p12', 'p34'] # order Mischenko's code expects
     allvals[0,:] = ang
     for ki, key in enumerate(keys):
       if oppclassic:
@@ -185,7 +185,7 @@ def convertData(ncdf, mode, ice, whichproc, radind, rhi, lami, rhop0, num_gauss,
     # write the temp file
     tempfn = 'tempfile%d.txt'%whichproc
     np.savetxt(tempfn, allvals.T)
-    os.system('./a.out %s > /dev/null'%tempfn)
+    os.system('./spher_expan.x %s > /dev/null'%tempfn)
     newdata = np.loadtxt('%s.expan_coeff'%tempfn, skiprows=1, unpack=True)
   elif mode == 'legendre':
     gpoints, gweights = leggauss(num_gauss)
@@ -215,7 +215,7 @@ def convertData(ncdf, mode, ice, whichproc, radind, rhi, lami, rhop0, num_gauss,
     # write the temp file
     tempfn = 'tempfile%d.txt'%whichproc
     np.savetxt(tempfn, allvals.T)
-    os.system('./a.out %s > /dev/null'%tempfn)
+    os.system('./spher_expan.x %s > /dev/null'%tempfn)
     newdata = np.loadtxt('%s.expan_coeff'%tempfn, skiprows=1, unpack=True)
 
     if ice: # for ice we have to calculate extra variables
@@ -291,7 +291,7 @@ def convertData(ncdf, mode, ice, whichproc, radind, rhi, lami, rhop0, num_gauss,
     # write the temp file
     tempfn = 'tempfile%d.txt'%whichproc
     np.savetxt(tempfn, allvals.T)
-    os.system('./a.out %s > /dev/null'%tempfn)
+    os.system('./spher_expan.x %s > /dev/null'%tempfn)
     newdata = np.loadtxt('%s.expan_coeff'%tempfn, skiprows=1, unpack=True)
 
   return newdata, linvals
@@ -319,16 +319,13 @@ def fun(fn, whichproc, rhop0, ice, keydic):
 def processFileRaw(infile, outdir, whichproc, rhop0, mode, ice):
   # mischenko expects the order p11, p22, p33, p44, p12, p34
   #numExpand = 2001 # this needs to match what is set in params.h
-  #numExpand = 300 
+  #numExpand = 1000 
   numExpand = 129 
   num_gauss = 960 # arbitrary? perhaps try adaptive
   # mishchenko's code gives errors in num_gauss is bigger than 1000, though this can probably be changed in params.h
 
   fn = os.path.basename(infile)
-  sfx = fn.split('.')[-1] # file suffix
-  outfn = fn.replace(sfx, 'GSFun.%s'%sfx)
-  if numExpand != 2001:
-    outfn = outfn.replace('.GSFun.%s'%sfx, '.GSFun-%d.%s'%(numExpand, sfx))
+  outfn = fn.replace('nomom.','')
 
   outfile = os.path.join(outdir, outfn)
 

@@ -107,9 +107,9 @@ if __name__ == "__main__":
     # that is prepended to the results of the initial hydrophilic 
     # calculation
     if options.classic:
-      opfn = "optics_%s.legacy.nc4"%particlename
+      opfn = "optics_%s.nomom.legacy.nc4"%particlename
     else:
-      opfn = "optics_%s.nc4"%particlename
+      opfn = "optics_%s.nomom.nc4"%particlename
     if "hydrophobic" in params and params["hydrophobic"]:
       # rename non-HP file 
       fn2 = "%s.nohp"%opfn

@@ -13,7 +13,7 @@ import xarray as xr
 import numpy as np
 from math import sqrt, cos, factorial
 import matplotlib.pyplot as plt
-from scipy.special import legendre
+from scipy.special import eval_legendre
 
 
 def recur_d_mn(m,n,s,theta):
@@ -115,6 +115,14 @@ class OPTICS(object):
         # calculate phase matrix from expansion coefficients
         self.getPmatrix()
 
+        # pull out the indices of S-elements selected for plotting later
+        self.s11 = self.optics['p11'].isel(rh=self.irh,bin=self.ibin,wavelength=self.iwav)
+        self.s12 = self.optics['p12'].isel(rh=self.irh,bin=self.ibin,wavelength=self.iwav)
+        self.s22 = self.optics['p22'].isel(rh=self.irh,bin=self.ibin,wavelength=self.iwav)
+        self.s33 = self.optics['p33'].isel(rh=self.irh,bin=self.ibin,wavelength=self.iwav)
+        self.s34 = self.optics['p34'].isel(rh=self.irh,bin=self.ibin,wavelength=self.iwav)
+        self.s44 = self.optics['p44'].isel(rh=self.irh,bin=self.ibin,wavelength=self.iwav)
+
     def getPmatrix(self):
         """
         regenerate the phase matrix from the GSF coefficients
@@ -153,8 +161,8 @@ class OPTICS(object):
         p11   = xr.DataArray(dims=self.dims,coords=self.coords)
         p11[:] = 0.0
         for s in range(self.nMom):
-            P = legendre(s)            
-            p11  += self.optics['pmom'].isel(p=ipol,m=s,rh=self.irh,wavelength=self.iwav,bin=self.ibin)*P(mu)
+            P = eval_legendre(s,mu)            
+            p11  += self.optics['pmom'].isel(p=ipol,m=s,rh=self.irh,wavelength=self.iwav,bin=self.ibin)*P
 
         return p11
 
@@ -284,11 +292,11 @@ class OPTICS(object):
         """
 
         if irh is None:
-            irh = np.arange(self.optics.rh.size)
+            irh = np.arange(self.p11.sizes['rh'])
         if iwav is None:
-            iwav = np.arange(self.optics.wavelength.size)
+            iwav = np.arange(self.p11.sizes['wavelength'])
         if ibin is None:
-            ibin = np.arange(self.optics.bin.size)
+            ibin = np.arange(self.p11.sizes['bin'])
 
         for rh in irh:
             for wav in iwav:
@@ -299,23 +307,23 @@ class OPTICS(object):
                     p11 = self.p11.isel(rh=rh,wavelength=wav,bin=bin)    
                     ax.plot(self.angle, p11,label='GSF')
                     # normalize S11
-                    s11 = self.optics['s11'].isel(rh=rh,wavelength=wav,bin=bin)
+                    s11 = self.s11.isel(rh=rh,wavelength=wav,bin=bin)
                     s11n = 2.*s11 / np.trapz(s11 * np.sin(self.theta),self.theta)
-                    ax.plot(self.angle,s11n,label='S11')
+                    ax.plot(self.angle,s11n,label='P11')
                     ax.legend()
                     ax.set_title('P11=P1')           
 
                     # P12
                     ax = axes[0,1]
                     ax.plot(self.angle, self.p12.isel(rh=rh,wavelength=wav,bin=bin)/p11,label='GSF')
-                    ax.plot(self.angle,self.optics['s12'].isel(rh=rh,wavelength=wav,bin=bin)/s11,label='S12')
+                    ax.plot(self.angle,self.s12.isel(rh=rh,wavelength=wav,bin=bin)/s11,label='P12')
                     ax.legend()
                     ax.set_title('P12=P2')
 
                     # P22
                     ax = axes[1,1]
                     ax.plot(self.angle, self.p22.isel(rh=rh,wavelength=wav,bin=bin)/p11,label='GSF')
-                    ax.plot(self.angle,self.optics['s22'].isel(rh=rh,wavelength=wav,bin=bin)/s11,label='S22')
+                    ax.plot(self.angle,self.s22.isel(rh=rh,wavelength=wav,bin=bin)/s11,label='P22')
                     ax.legend()
                     ax.set_yscale('log')
                     ax.set_title('P22=P5')
@@ -323,21 +331,21 @@ class OPTICS(object):
                     # P33
                     ax = axes[0,2]
                     ax.plot(self.angle, self.p33.isel(rh=rh,wavelength=wav,bin=bin)/p11,label='GSF')
-                    ax.plot(self.angle,self.optics['s33'].isel(rh=rh,wavelength=wav,bin=bin)/s11,label='S33')
+                    ax.plot(self.angle,self.s33.isel(rh=rh,wavelength=wav,bin=bin)/s11,label='P33')
                     ax.legend()
                     ax.set_title('P33=P3')
 
                     # P34
                     ax = axes[1,0]
                     ax.plot(self.angle, self.p34.isel(rh=rh,wavelength=wav,bin=bin)/p11,label='GSF')
-                    ax.plot(self.angle,self.optics['s34'].isel(rh=rh,wavelength=wav,bin=bin)/s11,label='S34')
+                    ax.plot(self.angle,self.s34.isel(rh=rh,wavelength=wav,bin=bin)/s11,label='P34')
                     ax.legend()
                     ax.set_title('P34=P4')
 
                     # P44
                     ax = axes[1,2]
                     ax.plot(self.angle, self.p44.isel(rh=rh,wavelength=wav,bin=bin)/p11,label='GSF')
-                    ax.plot(self.angle,self.optics['s44'].isel(rh=rh,wavelength=wav,bin=bin)/s11,label='S44')
+                    ax.plot(self.angle,self.s44.isel(rh=rh,wavelength=wav,bin=bin)/s11,label='P44')
                     ax.legend()
                     ax.set_title('P44=P6')
 
@@ -351,11 +359,11 @@ if __name__ == '__main__':
 
     inDir =  '/discover/nobackup/pcastell/workspace/aero_work/aist/sbg/aop_testing/ExtDataColarco'
 #    inFile = 'optics_SU.v2.0.0.GSFun-129.nc4'
-    inFile = 'optics_DU.v2.0.0.GSFun-129.nc4'
+    inFile = 'optics_BC.v2.0.0.GSFun-129.nc4'
 
 
 #    optics = OPTICS(inDir+'/'+inFile,irh=[0],ibin=[0],iwav=[0])
-#    optics.plotPmatrix(irh=[0],ibin=[0],iwav=[0])
+#    optics.plotPmatrix()
 
-    optics = OPTICS(inDir+'/'+inFile)
-    optics.plotPmatrix(irh=[0])
+    optics = OPTICS(inDir+'/'+inFile,irh=[35],iwav=[0])
+    optics.plotPmatrix()
