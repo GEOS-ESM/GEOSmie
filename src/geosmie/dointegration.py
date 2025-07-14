@@ -287,7 +287,7 @@ def createNCDF(ncdfID, oppfx, rarr, rharr, lambarr, ang, oppclassic):
   vardict['cext'] = {'units': 'm2', \
   'long_name': 'mass extinction cross-section'
   }
-  vardict['bbck'] = {'units': 'm2 (kg dry mass)-1', \
+  vardict['bbck'] = {'units': 'm2 (kg dry mass)-1 sr-1', \
   'long_name': 'mass backscatter efficiency'
   }
   vardict['lidar_ratio'] = {'units': '', \
