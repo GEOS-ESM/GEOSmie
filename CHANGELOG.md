@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- fixed units for mass backscattering efficiency to correctly reflect they are
+  in units of m2 kg-1 sr-1
 
 ### Added
 
