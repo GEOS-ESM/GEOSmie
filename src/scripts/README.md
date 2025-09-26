@@ -2,6 +2,7 @@ Table of Contents
 =================
 
 * [GEOSmie](#geosmie)
+   * [v2.0.1](#v2.0.1)
    * [v2.0.0](#v2.0.0)
 
 <!-- Created by https://github.com/ekalinin/github-markdown-toc -->
@@ -13,6 +14,33 @@ See [Kemppinen et al. 2022](https://gmao.gsfc.nasa.gov/pubs/docs/Kemppinen1447.p
 documentation of the approach. In the following is some brief document of the particlular
 characteristics of specific optical tables generated, sorted by a carefully thought
 out versioning scheme!
+
+## V2.0.1
+This version retunes some of the particle property definitions to allow for
+non-truncated lognormal distributions for BC/BR/OC/SU and introduces lognormal
+bins for SS. The objective is to provide smoother distributed optical properties
+for OSSE and retrieval work. Some tuning is done to approximately get spectral
+extinction similar to v2.0.0 optics.
+
+For BC/BR/OC/SU the maximum radius is extended to 5 microns. Retuned
+particle properties are:
+| Species | rnum [um] | sigma | Notes          |
+| ---     | ---       | ---   | ---            |
+| BC      | 0.0118    | 2.0   | bc.v5_7.json   |
+| OC      | 0.0212    | 2.12  | oc.v12_7.json  |
+| BR      | 0.0212    | 2.12  | brc.v12_7.json |
+| SU      | 0.0695    | 1.77  | su.v5_7.json   |
+
+For SS the following properties are assumed
+| Bin | rnum [um] | sigma | rMin [um] | rMax [um] | Notes          |
+| --- | ---       | ---   | ---       | ---       | ---            |
+| 1   | 0.0236    | 2.0   | 0.005     | 1.0       | ss.v2.0.1.json |
+| 2   | 0.07985   | 2.0   | 0.01      | 3.0       | ss.v2.0.1.json |
+| 3   | 0.3224    | 2.0   | 0.1       | 10.0      | ss.v2.0.1.json |
+| 4   | 0.7676    | 2.0   | 0.1       | 30.0      | ss.v2.0.1.json |
+| 5   | 2.209     | 2.0   | 0.5       | 50.0      | ss.v2.0.1.json |
+
+
 
 ## V2.0.0
 
