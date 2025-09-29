@@ -140,6 +140,8 @@ def create_experiment_directory():
 
     # Dust kernels
     dkernel = "/home/pcolarco/geos_aerosols/pcolarco/GEOSmie/kernels"
+    if(os.uname().nodename[0:6] == 'bender'):
+        dkernel = "/home/colarco/ExtData/chemistry/kernels"
     kernel_dir = input(f"Provide the location of the GRASP dust kernels [default: {dkernel}]:  ")
     kernel_dir = kernel_dir.strip()
     if not kernel_dir:
