@@ -6,9 +6,9 @@ setenv PYTHONPATH ${SRC_DIR}/install/lib/Python
 
 source $SRC_DIR/env@/g5_modules
 
-# Script to reproduce v2.0.0 optics tables
+# Script to reproduce optical table used in ACMAP23_ANY pyrocb project
 # JSON files live in geosparticles
-# Output will be placed in AerosolOptics/v2.0.0/x directory
+# Output will be placed in AerosolOptics/pyrocb/x directory
 
 set ver = "pyrocb"
 
