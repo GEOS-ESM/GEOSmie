@@ -16,7 +16,7 @@ mkdir $ver
 mkdir -p ./AerosolOptics/$ver/x
 
 # Link the desired files
-  ln -s ${PWD}/geosparticles/experimental/su_ht_reff04_sig16_single.json
+  ln -s ${PWD}/geosparticles/experimental/su_ht_reff04_sig16_single.json \
         $ver/SU.hunga_reff04_sig16_single.json
 
 # Run the cases
