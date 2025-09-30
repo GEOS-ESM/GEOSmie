@@ -82,6 +82,14 @@ module load GEOSenv
 ```
 which obtains the latest `git`, `CMake`, etc. modules needed to build.
 
+##### Non-GMAO Desktops
+
+Target is for the 614 lab cluster, assumed to have `git`, `cmake`, and `mepo` installed.
+It is not necessary (or useful, or--really--possible) in this case to fuss about with 
+loading the `GEOSenv` module. The only notable modification needed then is to check
+`cmake_it` code and change the fortran reference as necessary; e.g., change `ifort` to
+`gfortran` on bender.
+
 ### Use mepo to clone the repository
 
 [Mepo](https://github.com/GEOS-ESM/mepo) is a multiple repository tool available on github.
