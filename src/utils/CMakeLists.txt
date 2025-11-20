@@ -4,4 +4,4 @@
 
 # Python executables
 # ------------------
-  install(PROGRAMS eval_gsfun.py DESTINATION bin)
+  install(PROGRAMS plotoptics.py eval_gsfun.py DESTINATION bin)
