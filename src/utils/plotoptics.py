@@ -12,6 +12,7 @@ import numpy as np
 from math import sqrt, cos, factorial
 import matplotlib.pyplot as plt
 from scipy.special import eval_legendre
+from optparse import OptionParser
 
 def find_nearest(array, value):
     array = np.asarray(array)
@@ -160,9 +161,17 @@ class OPTICS(object):
             plt.suptitle(self.fname+' [%3d nm]'%(wave))
             plt.tight_layout(pad=4)
 #            plt.show()
-            plt.savefig(self.fname + '_ibin%02d_wav%04dnm.png'%(bin,wave))
+            plt.savefig('plots/'+self.fname + '_ibin%02d_wav%04dnm.png'%(bin,wave))
 
 if __name__ == '__main__':
-    optics = OPTICS('optics_SU.v2.0.0.nomom.nc4')
+    parser = OptionParser(usage="Usage: %prog",
+                          version='0.0.1' )
+    parser.add_option("--name", dest="name", default="",
+                      help="Particle file to plot (default=%s)"\
+                      %(""))
+    (options, args) = parser.parse_args()
+    fname = options.name
+  
+    optics = OPTICS(fname)
     optics.plot()
 
