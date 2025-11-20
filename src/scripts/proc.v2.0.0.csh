@@ -45,3 +45,8 @@ mkdir -p ./AerosolOptics/$ver/x
 # Move files
   \mv -f $ver/*nc4 ./AerosolOptics/$ver/x
 
+# Make plots
+  mkdir -p plots
+  foreach XX (DU BC OC SU BR NI SS)
+    ./plotoptics.py --name ./AerosolOptics/$ver/x/optics_$XX.$ver.nc4
+  end
