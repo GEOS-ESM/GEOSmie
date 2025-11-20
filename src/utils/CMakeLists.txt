@@ -1,7 +1,8 @@
 #
-# Cmake fules for utils
+# Cmake rules for utils
 #
-
 # Python executables
 # ------------------
-  install(PROGRAMS plotoptics.py eval_gsfun.py DESTINATION bin)
+  esma_set_this()
+  file(GLOB scripts *.py)
+  install(PROGRAMS ${scripts} DESTINATION bin/${this})
