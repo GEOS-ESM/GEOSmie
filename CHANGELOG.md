@@ -12,10 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   in units of m2 kg-1 sr-1
 
 ### Added
+- Added plotting code to utils and made it part of default run script
+  to generate nominal plots when files are run
 
 ### Changed
 - Updated components.yaml to fresher repos
 - some handling for non-GMAO desktops
+- Changed calling python to be /usr/bin/env python3 for discover
 
 ### Removed
 
