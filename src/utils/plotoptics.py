@@ -13,6 +13,8 @@ from math import sqrt, cos, factorial
 import matplotlib.pyplot as plt
 from scipy.special import eval_legendre
 from optparse import OptionParser
+import matplotlib
+#matplotlib.use('agg')
 
 def find_nearest(array, value):
     array = np.asarray(array)
@@ -32,7 +34,7 @@ class OPTICS(object):
         self.fname = os.path.basename(inFile)
         
         # read optics file
-        self.optics = xr.load_dataset(inFile)
+        self.optics = xr.load_dataset(inFile,engine="netcdf4")
         self.rh = self.optics['rh'].values
         self.wavelengths = self.optics['wavelength'].values*1e9 # nm
 
