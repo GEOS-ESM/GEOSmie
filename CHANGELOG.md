@@ -15,10 +15,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added particle property files and scripts to generate
   pyrocb brown carbon properties (ACMAP23_ANY) and
   volcanic sulfate properties for Hunga (APARC)
+- Added plotting code to utils and made it part of default run script
+  to generate nominal plots when files are run
 
 ### Changed
 - Updated components.yaml to fresher repos
 - some handling for non-GMAO desktops
+- Changed calling python to be /usr/bin/env python3 for discover
 
 ### Removed
 

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.11
+#!/usr/bin/env python3
 
 """
  Utility to create GEOS/GOCART-compatible aerosol optics look-up tables
