@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   in units of m2 kg-1 sr-1
 
 ### Added
+- Added particle property files and scripts to generate
+  pyrocb brown carbon properties (ACMAP23_ANY) and
+  volcanic sulfate properties for Hunga (APARC)
 
 ### Changed
 - Updated components.yaml to fresher repos
