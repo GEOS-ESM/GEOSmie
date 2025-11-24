@@ -127,6 +127,14 @@ def create_experiment_directory():
         elif os.path.isdir(p):
             shutil.copytree(p, experiment_directory / os.path.basename(p),dirs_exist_ok=True)
 
+    # Copy utils scripts to the experiment directory
+    config_filepath = current_directory / "utils/*"
+    for p in glob.glob(str(config_filepath)):
+        if os.path.isfile(p):
+            shutil.copy(p, experiment_directory)
+        elif os.path.isdir(p):
+            shutil.copytree(p, experiment_directory / os.path.basename(p),dirs_exist_ok=True)
+
     # Get the template script
     nscript = "proc.v2.0.0.csh"
     script_name = input(f"Provide the script name [default: {nscript}]:  ")
