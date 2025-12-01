@@ -506,7 +506,21 @@ def getHumidRefractiveIndex(params, radind, rhi, rh, nref0, nrefwater):
     mr = [nrefUse[i].real for i in range(len(nrefUse))] 
     mi = [nrefUse[i].imag for i in range(len(nrefUse))]
   elif params['rhDep']['type'] == 'ss':
-    rMinMaj = pparam['rMinMaj'][radind] 
+    try:
+      rMinMaj = pparam['rMinMaj'][radind]
+    except:
+      rMinMaj = pparam['rmin0'][radind][0]
+    onerh = rh[rhi]
+    rMinUse = pp.humidityGrowth(rparams, rMinMaj, onerh, rh)
+    rrat = (rMinMaj/rMinUse) # ratio of dry binmin and wet binmin
+    gf   = 1./rrat # inverse of the ratio, i.e. linear growth factor
+#    print(type(rMinMaj),type(rMinUse),type(gf))
+#    sys.exit()
+    nrefUse = [nrefwater + (nref0[i] - nrefwater) * (rrat) ** 3. for i in range(len(nref0))]
+    mr = [nrefUse[i].real for i in range(len(nrefUse))] 
+    mi = [nrefUse[i].imag for i in range(len(nrefUse))]
+  elif params['rhDep']['type'] == 'su':
+    rMinMaj = pparam['rmin0'][radind][0]
     onerh = rh[rhi]
     rMinUse = pp.humidityGrowth(rparams, rMinMaj, onerh, rh)
     rrat = (rMinMaj/rMinUse) # ratio of dry binmin and wet binmin
