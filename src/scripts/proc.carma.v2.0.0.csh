@@ -1,7 +1,7 @@
 #!/bin/tcsh
 
 # setup environment
-setenv SRC_DIR /gpfsm/dnb34/pcolarco/GEOSmie
+setenv SRC_DIR /home/colarco/sandbox/GEOSmie
 setenv PYTHONPATH ${SRC_DIR}/install/lib/Python
 
 source $SRC_DIR/env@/g5_modules
@@ -25,18 +25,19 @@ mkdir -p ./AerosolOptics/$ver/x
 
 # All wavelengths
   foreach XX (DU BC OC SU SS)
-   ./runoptics.py -c --name carma$XX.json --dest=$ver> $ver/optics_carma$XX.$ver.txt &
+   ./runoptics.py -c --name carma$XX.$ver.json --dest=$ver> $ver/optics_carma$XX.$ver.txt &
   end
   wait
 
 # Add phase matrices
   foreach XX (DU BC OC SU SS)
-   ./rungsf.py --filename $ver/optics_carma$XX.$ver.nomom.nc4 --dest=$ver
+   ./rungsf.py --filename $ver/optics_carma$XX.$ver.nomom.legacy.nc4 --dest=$ver> $ver/optics_carma$XX.$ver.gsf.txt &
   end
+  wait
 
 # Bands
   foreach XX (DU BC OC SU SS)
-   ./runbands.py --filename $ver/optics_$XX.$ver.nc4 --dest=$ver
+   ./runbands.py --filename $ver/optics_$XX.$ver.legacy.nc4 --dest=$ver
   end
 
 # Move files
@@ -45,5 +46,5 @@ mkdir -p ./AerosolOptics/$ver/x
 # Make plots
   mkdir -p plots
   foreach XX (DU BC OC SU SS)
-    ./plotoptics_bins_legacy.py --name ./AerosolOptics/$ver/x/optics_carma$XX.$ver.nc4
+    ./plotoptics_bins_legacy.py --name ./AerosolOptics/$ver/x/optics_carma$XX.$ver.legacy.nc4
   end

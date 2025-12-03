@@ -34,8 +34,9 @@ mkdir -p ./AerosolOptics/$ver/x
 
 # Add phase matrices
   foreach XX (DU BC OC SU BR NI SS)
-   ./rungsf.py --filename $ver/optics_$XX.$ver.nomom.nc4 --dest=$ver
+   ./rungsf.py --filename $ver/optics_$XX.$ver.nomom.nc4 --dest=$ver > $ver/optics_$XX.$ver.gsf.txt &
   end
+  wait
 
 # Bands
   foreach XX (DU BC OC SU BR NI SS)
