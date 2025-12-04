@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.11
+#!/usr/bin/env python3
 
 # Utilities for calculating properties for CARMA
 import numpy as np
