@@ -989,7 +989,8 @@ def fun(partID0, datatype, oppfx, oppclassic):
 
         ret['growth_factor'] = gf
 
-        mass0 = ret['volume'] * rhop0
+        if rhi == 0.0:
+          mass0 = ret['volume'] * rhop0
 
         ret['rhop'] = rhop
         ret['area'] = ret['area'] / mass0
