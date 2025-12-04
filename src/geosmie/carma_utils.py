@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3.11
 
 # Utilities for calculating properties for CARMA
 import numpy as np
@@ -361,7 +361,7 @@ def printfield(f,nbin,title,field,close=False):
     print('',file=f)
     return
 
-def printjson(nbin, rlow, rup, rhop0, species='SU', sigma0=1.1,num0=800):
+def printjson(nbin, rlow, rup, rhop0, species='SU', sigma0=1.1,num0=800,version='v2.0.0'):
     '''
     Given particle properties and a species identifier (for RH growth handling)
     write out a CARMA style json file suitable to run runoptics.py
@@ -397,7 +397,7 @@ def printjson(nbin, rlow, rup, rhop0, species='SU', sigma0=1.1,num0=800):
                    0.97, 0.98, 0.99])
 
 #   Print
-    f = open('carma%s.json'%(species),'w')
+    f = open('carma%s.%s.json'%(species,version),'w')
     print('{', file=f)
     print('',file=f)
     printfield(f,nbin,'rhop0',["%5.1f"%(x) for x in rhop])
@@ -478,8 +478,11 @@ if __name__ == "__main__":
                       help="Number of sub-bins (default=800)")
     parser.add_option("--species", dest="species", default="SU",
                       help="Species (default=SU)")
+    parser.add_option("--versionid", dest="version", default="v2.0.0",
+                      help="Version ID (default=v2.0.0)")
 
     (options, args) = parser.parse_args()
     
     printjson(options.nbin,options.rlow,options.rup,options.rhop,
-              sigma0=options.sigma,num0=options.num,species=options.species)
+              sigma0=options.sigma,num0=options.num,species=options.species,
+              version=options.version)
