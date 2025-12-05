@@ -136,7 +136,7 @@ def create_experiment_directory():
             shutil.copytree(p, experiment_directory / os.path.basename(p),dirs_exist_ok=True)
 
     # Get the template script
-    nscript = "proc.v2.0.0.csh"
+    nscript = "proc.v2.1.0.csh"
     script_name = input(f"Provide the script name [default: {nscript}]:  ")
     script_name = script_name.strip()
     if not script_name:
