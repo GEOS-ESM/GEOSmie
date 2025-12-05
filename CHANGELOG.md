@@ -8,6 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+
+### Added
+
+### Changed
+
+### Removed
+
+### Deprecated
+
+## [2.1.0] - 2025-12-05
+
+### Fixed
 - fixed units for mass backscattering efficiency to correctly reflect they are
   in units of m2 kg-1 sr-1
 - fixed an error in dointegration.py to do with calculating volume and area
@@ -28,8 +40,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Changed calling python to be /usr/bin/env python3 for discover
 
 ### Removed
+- remove proc.v2.0.0.csh script from repo (see deprecated)
 
 ### Deprecated
+- v2.0.0 optics tables are deprecated. Older scripts will work and produce correct
+  output, but we are bumping the version because this code will have bug fix
+  for area and volume fields (see fixed above)
 
 ## [2.0.0] - 2025-06-25
 
