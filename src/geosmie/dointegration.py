@@ -287,7 +287,7 @@ def createNCDF(ncdfID, oppfx, rarr, rharr, lambarr, ang, oppclassic):
   vardict['cext'] = {'units': 'm2', \
   'long_name': 'mass extinction cross-section'
   }
-  vardict['bbck'] = {'units': 'm2 (kg dry mass)-1', \
+  vardict['bbck'] = {'units': 'm2 (kg dry mass)-1 sr-1', \
   'long_name': 'mass backscatter efficiency'
   }
   vardict['lidar_ratio'] = {'units': '', \
@@ -506,7 +506,21 @@ def getHumidRefractiveIndex(params, radind, rhi, rh, nref0, nrefwater):
     mr = [nrefUse[i].real for i in range(len(nrefUse))] 
     mi = [nrefUse[i].imag for i in range(len(nrefUse))]
   elif params['rhDep']['type'] == 'ss':
-    rMinMaj = pparam['rMinMaj'][radind] 
+    try:
+      rMinMaj = pparam['rMinMaj'][radind]
+    except:
+      rMinMaj = pparam['rmin0'][radind][0]
+    onerh = rh[rhi]
+    rMinUse = pp.humidityGrowth(rparams, rMinMaj, onerh, rh)
+    rrat = (rMinMaj/rMinUse) # ratio of dry binmin and wet binmin
+    gf   = 1./rrat # inverse of the ratio, i.e. linear growth factor
+#    print(type(rMinMaj),type(rMinUse),type(gf))
+#    sys.exit()
+    nrefUse = [nrefwater + (nref0[i] - nrefwater) * (rrat) ** 3. for i in range(len(nref0))]
+    mr = [nrefUse[i].real for i in range(len(nrefUse))] 
+    mi = [nrefUse[i].imag for i in range(len(nrefUse))]
+  elif params['rhDep']['type'] == 'su':
+    rMinMaj = pparam['rmin0'][radind][0]
     onerh = rh[rhi]
     rMinUse = pp.humidityGrowth(rparams, rMinMaj, onerh, rh)
     rrat = (rMinMaj/rMinUse) # ratio of dry binmin and wet binmin
@@ -975,7 +989,8 @@ def fun(partID0, datatype, oppfx, oppclassic):
 
         ret['growth_factor'] = gf
 
-        mass0 = ret['volume'] * rhop0
+        if rhi == 0.0:
+          mass0 = ret['volume'] * rhop0
 
         ret['rhop'] = rhop
         ret['area'] = ret['area'] / mass0

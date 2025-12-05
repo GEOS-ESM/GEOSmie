@@ -127,8 +127,16 @@ def create_experiment_directory():
         elif os.path.isdir(p):
             shutil.copytree(p, experiment_directory / os.path.basename(p),dirs_exist_ok=True)
 
+    # Copy utils scripts to the experiment directory
+    config_filepath = current_directory / "utils/*"
+    for p in glob.glob(str(config_filepath)):
+        if os.path.isfile(p):
+            shutil.copy(p, experiment_directory)
+        elif os.path.isdir(p):
+            shutil.copytree(p, experiment_directory / os.path.basename(p),dirs_exist_ok=True)
+
     # Get the template script
-    nscript = "proc.v2.0.0.csh"
+    nscript = "proc.v2.1.0.csh"
     script_name = input(f"Provide the script name [default: {nscript}]:  ")
     script_name = script_name.strip()
     if not script_name:
@@ -140,6 +148,8 @@ def create_experiment_directory():
 
     # Dust kernels
     dkernel = "/home/pcolarco/geos_aerosols/pcolarco/GEOSmie/kernels"
+    if(os.uname().nodename[0:6] == 'bender'):
+        dkernel = "/home/colarco/ExtData/chemistry/kernels"
     kernel_dir = input(f"Provide the location of the GRASP dust kernels [default: {dkernel}]:  ")
     kernel_dir = kernel_dir.strip()
     if not kernel_dir:
