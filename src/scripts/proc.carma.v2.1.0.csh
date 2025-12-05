@@ -6,11 +6,11 @@ setenv PYTHONPATH ${SRC_DIR}/install/lib/Python
 
 source $SRC_DIR/env@/g5_modules
 
-# Script to reproduce v2.0.0 optics tables
+# Script to reproduce v2.1.0 optics tables
 # JSON files live in geosparticles
-# Output will be placed in AerosolOptics/v2.0.0/x directory
+# Output will be placed in AerosolOptics/v2.1.0/x directory
 
-set ver = "v2.0.0"
+set ver = "v2.1.0"
 
 mkdir $ver
 mkdir -p ./AerosolOptics/$ver/x
