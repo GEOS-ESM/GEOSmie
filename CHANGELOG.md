@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - fixed units for mass backscattering efficiency to correctly reflect they are
   in units of m2 kg-1 sr-1
+- fixed an error in dointegration.py to do with calculating volume and area
+  per units mass of particle distributions
 
 ### Added
 - Added particle property files and scripts to generate
@@ -17,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   volcanic sulfate properties for Hunga (APARC)
 - Added plotting code to utils and made it part of default run script
   to generate nominal plots when files are run
+- Added functionality to create CARMA (sectional model) JSON files
+  to drive calculations and plotoptics_bin* plotting scripts
 
 ### Changed
 - Updated components.yaml to fresher repos
