@@ -12,6 +12,7 @@ import numpy as np
 import os
 import json
 import sys
+import carma_utils
 
 # Load and return data structure with contents of input JSON file
 def getPPJSON(partid):
@@ -99,6 +100,12 @@ def humidityGrowth(params, siz0, rh, allrh): # assume all different sizes grow i
        c3 = rhp['c3']
        c4 = rhp['c4']
        return (c1 * siz ** c2 / (c3 * siz ** c4 - np.log10(rh)) + siz ** 3.) ** (1./3.) / 100.
+  elif rhtype == 'su':
+    temp = rhp['temp']
+    if rh == 0.0:
+      return siz0
+    else:
+      return siz0*float(carma_utils.grow_v75(rh,siz0,temp=temp))
 
 # Function to return a lognormal distribution in terms of size parameter and parameters
 # Returns dndr assuming parameter rmode is the mode of a number distribution, or

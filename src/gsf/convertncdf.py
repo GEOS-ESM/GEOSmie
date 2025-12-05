@@ -167,7 +167,7 @@ def createVariablesGRASP(ncdf, numExpand):
   ncdf.variables['rh'][0] = 0.0
   ncdf.createVariable('pmom', 'f8', ('nPol', 'nMom', 'radius', 'rh', keydic['lambda']))
 
-def convertData(ncdf, mode, ice, whichproc, radind, rhi, lami, rhop0, num_gauss, linangs, oppclassic):
+def convertData(ncdf, fn, mode, ice, whichproc, radind, rhi, lami, rhop0, num_gauss, linangs, oppclassic):
   linvals = np.zeros([7,len(linangs)])
   linvals[0,:] = linangs
   if mode == 'pygeos':
@@ -183,7 +183,7 @@ def convertData(ncdf, mode, ice, whichproc, radind, rhi, lami, rhop0, num_gauss,
         allvals[ki+1, :] = ncdf.variables[key][radind, lami, rhi, :]
 
     # write the temp file
-    tempfn = 'tempfile%d.txt'%whichproc
+    tempfn = '%s.tempfile%d.txt'%(fn,whichproc)
     np.savetxt(tempfn, allvals.T)
     os.system('./spher_expan.x %s > /dev/null'%tempfn)
     newdata = np.loadtxt('%s.expan_coeff'%tempfn, skiprows=1, unpack=True)
@@ -213,7 +213,7 @@ def convertData(ncdf, mode, ice, whichproc, radind, rhi, lami, rhop0, num_gauss,
       linvals[1+ii,:] = vals2 # mischenko's order
 
     # write the temp file
-    tempfn = 'tempfile%d.txt'%whichproc
+    tempfn = '%s.tempfile%d.txt'%(fn,whichproc)
     np.savetxt(tempfn, allvals.T)
     os.system('./spher_expan.x %s > /dev/null'%tempfn)
     newdata = np.loadtxt('%s.expan_coeff'%tempfn, skiprows=1, unpack=True)
@@ -289,7 +289,7 @@ def convertData(ncdf, mode, ice, whichproc, radind, rhi, lami, rhop0, num_gauss,
     ncdf.variables['g'][radind, lami, rhi] = g
 
     # write the temp file
-    tempfn = 'tempfile%d.txt'%whichproc
+    tempfn = '%s.tempfile%d.txt'%(fn,whichproc)
     np.savetxt(tempfn, allvals.T)
     os.system('./spher_expan.x %s > /dev/null'%tempfn)
     newdata = np.loadtxt('%s.expan_coeff'%tempfn, skiprows=1, unpack=True)
@@ -371,7 +371,7 @@ def processFileRaw(infile, outdir, whichproc, rhop0, mode, ice):
       print("lami %d of %d"%(lami+1, len(alllambda)))
     for rhi, rh in enumerate(ncdf.variables['rh']):
       for radind, radius in enumerate(ncdf.variables[keydic[radiusNm]]):
-        newdata, linvals = convertData(ncdf, mode, ice, whichproc, radind, rhi, lami, rhop0, num_gauss, linangs, oppclassic)
+        newdata, linvals = convertData(ncdf, fn, mode, ice, whichproc, radind, rhi, lami, rhop0, num_gauss, linangs, oppclassic)
 #        print(newdata,linvals)
 #        sys.exit()
             
