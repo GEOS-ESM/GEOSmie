@@ -239,7 +239,10 @@ def fun(data, part, opfn, mode, useSolar, noIR):
 
   # special variables: lambda, rh, qname
   opncdf.createVariable(lamNm, 'f8', (lamNm))
-  opncdf.variables[lamNm][:] = bandMeanM
+  if oppclassic:
+    opncdf.variables[lamNm][:] = np.arange(1,nbands+1)
+  else:
+    opncdf.variables[lamNm][:] = bandMeanM
 
   opncdf.createVariable('rh', 'f8', ('rh'))
   opncdf.variables['rh'][:] = data.variables['rh'][:]
