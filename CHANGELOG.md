@@ -8,8 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- fixed band handling when making legacy format tables
 
 ### Added
+- added RRTMGP band file production to scripting chain
 
 ### Changed
 
