@@ -239,10 +239,7 @@ def fun(data, part, opfn, mode, useSolar, noIR):
 
   # special variables: lambda, rh, qname
   opncdf.createVariable(lamNm, 'f8', (lamNm))
-  if oppclassic:
-    opncdf.variables[lamNm][:] = np.arange(1,nbands+1)
-  else:
-    opncdf.variables[lamNm][:] = bandMeanM
+  opncdf.variables[lamNm][:] = bandMeanM
 
   opncdf.createVariable('rh', 'f8', ('rh'))
   opncdf.variables['rh'][:] = data.variables['rh'][:]
@@ -252,7 +249,7 @@ def fun(data, part, opfn, mode, useSolar, noIR):
 
   # add low and high limit information for bands
   # convert to wavelength if needed
-  if mode == 'RRTMG':
+  if (mode == 'RRTMG') or (mode == 'RRTMGP'):
     # convert from wavenumber to wavelength
     lBandLow = np.array(lBandLow) ** (-1) * 0.01
     lBandUp = np.array(lBandUp) ** (-1) * 0.01
