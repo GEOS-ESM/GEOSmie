@@ -249,7 +249,7 @@ def fun(data, part, opfn, mode, useSolar, noIR):
 
   # add low and high limit information for bands
   # convert to wavelength if needed
-  if mode == 'RRTMG':
+  if (mode == 'RRTMG') or (mode == 'RRTMGP'):
     # convert from wavenumber to wavelength
     lBandLow = np.array(lBandLow) ** (-1) * 0.01
     lBandUp = np.array(lBandUp) ** (-1) * 0.01

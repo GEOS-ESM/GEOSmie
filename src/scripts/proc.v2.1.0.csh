@@ -41,6 +41,7 @@ mkdir -p ./AerosolOptics/$ver/x
 # Bands
   foreach XX (DU BC OC SU BR NI SS)
    ./runbands.py --filename $ver/optics_$XX.$ver.nc4 --dest=$ver
+   ./runbands.py --filename $ver/optics_$XX.$ver.nc4 --dest=$ver --bandmode=RRTMGP
   end
 
 # Move files
