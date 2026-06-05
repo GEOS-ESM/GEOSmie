@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - added RRTMGP band file production to scripting chain
+- added processing script for v2.2.0 optics which updates
+  BRC optics table
 
 ### Changed
 
