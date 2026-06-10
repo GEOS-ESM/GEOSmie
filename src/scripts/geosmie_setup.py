@@ -19,6 +19,17 @@ import subprocess
 import shutil
 import glob
 
+def change_env_python(dir):
+    os.chdir(dir)
+    config_filepath = "./*py"
+    for p in glob.glob(str(config_filepath)):
+        if os.path.isfile(p):
+            target_dir = experiment_directory
+            dict_words = {"/usr/bin/env python3": "/usr/bin/env python3.11"}
+            search_replace_in_file(p, target_dir, dict_words)
+    os.chdir("..")
+
+
 def print_message():
     mssg = """
     ---------------------------------------------------------------------------------
@@ -37,7 +48,7 @@ def print_message():
     """
     print(mssg)
 
-def search_reaplace_in_file(loc_filename: str, 
+def search_replace_in_file(loc_filename: str, 
                             target_dir: Path, 
                             dict_words: dict) -> None:
     """
@@ -55,6 +66,7 @@ def search_reaplace_in_file(loc_filename: str,
        are the new words.
     """
     new_filename = target_dir / loc_filename
+    print(loc_filename, new_filename)
     shutil.copy(loc_filename, new_filename)
 
     try:
@@ -76,6 +88,11 @@ def search_reaplace_in_file(loc_filename: str,
 
 
 def create_experiment_directory():
+
+    # Special handling if on bender
+    bender = False
+    if(os.uname().nodename[0:6] == 'bender'):
+        bender = True
 
     # Get the current directory
     # Will be in the form FULL_PATH/GEOSmie/install/bin
@@ -118,6 +135,8 @@ def create_experiment_directory():
             shutil.copy(p, experiment_directory)
         elif os.path.isdir(p):
             shutil.copytree(p, experiment_directory / os.path.basename(p),dirs_exist_ok=True)
+    if bender:
+        change_env_python("geosmie")
 
     # Copy gsf scripts to the experiment directory
     config_filepath = current_directory / "gsf/*"
@@ -126,6 +145,8 @@ def create_experiment_directory():
             shutil.copy(p, experiment_directory)
         elif os.path.isdir(p):
             shutil.copytree(p, experiment_directory / os.path.basename(p),dirs_exist_ok=True)
+    if bender:
+        change_env_python("gsf")
 
     # Copy utils scripts to the experiment directory
     config_filepath = current_directory / "utils/*"
@@ -134,9 +155,11 @@ def create_experiment_directory():
             shutil.copy(p, experiment_directory)
         elif os.path.isdir(p):
             shutil.copytree(p, experiment_directory / os.path.basename(p),dirs_exist_ok=True)
+    if bender:
+        change_env_python("utils")
 
     # Get the template script
-    nscript = "proc.v2.1.0.csh"
+    nscript = "proc.v2.2.0.csh"
     script_name = input(f"Provide the script name [default: {nscript}]:  ")
     script_name = script_name.strip()
     if not script_name:
@@ -144,11 +167,11 @@ def create_experiment_directory():
 
     target_dir = experiment_directory
     dict_words = {"@SRCDIR": str(source_directory)}
-    search_reaplace_in_file(script_name, target_dir, dict_words)
+    search_replace_in_file(script_name, target_dir, dict_words)
 
     # Dust kernels
     dkernel = "/home/pcolarco/geos_aerosols/pcolarco/GEOSmie/kernels"
-    if(os.uname().nodename[0:6] == 'bender'):
+    if bender:
         dkernel = "/home/colarco/ExtData/chemistry/kernels"
     kernel_dir = input(f"Provide the location of the GRASP dust kernels [default: {dkernel}]:  ")
     kernel_dir = kernel_dir.strip()
