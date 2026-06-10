@@ -19,7 +19,7 @@ import subprocess
 import shutil
 import glob
 
-def change_env_python(dir):
+def change_env_python(dir,experiment_directory):
     os.chdir(dir)
     config_filepath = "./*py"
     for p in glob.glob(str(config_filepath)):
@@ -136,7 +136,7 @@ def create_experiment_directory():
         elif os.path.isdir(p):
             shutil.copytree(p, experiment_directory / os.path.basename(p),dirs_exist_ok=True)
     if bender:
-        change_env_python("geosmie")
+        change_env_python("geosmie",experiment_directory)
 
     # Copy gsf scripts to the experiment directory
     config_filepath = current_directory / "gsf/*"
@@ -146,7 +146,7 @@ def create_experiment_directory():
         elif os.path.isdir(p):
             shutil.copytree(p, experiment_directory / os.path.basename(p),dirs_exist_ok=True)
     if bender:
-        change_env_python("gsf")
+        change_env_python("gsf",experiment_directory)
 
     # Copy utils scripts to the experiment directory
     config_filepath = current_directory / "utils/*"
@@ -156,7 +156,7 @@ def create_experiment_directory():
         elif os.path.isdir(p):
             shutil.copytree(p, experiment_directory / os.path.basename(p),dirs_exist_ok=True)
     if bender:
-        change_env_python("utils")
+        change_env_python("utils",experiment_directory)
 
     # Get the template script
     nscript = "proc.v2.2.0.csh"
