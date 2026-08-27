@@ -1,0 +1,10 @@
+Dust Size Distribution Parameters
+r_eff(um) sigma density(g/m3)
+0.14      1.5     2.60e6
+0.24      1.5     2.60e6
+0.45      1.5     2.60e6
+0.80      1.5     2.60e6
+1.40      1.8     2.60e6
+2.40      2.0     2.60e6
+4.50      2.2     2.60e6
+8.00      2.4     2.60e6
