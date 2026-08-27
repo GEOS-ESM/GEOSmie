@@ -54,5 +54,5 @@ set sites = ("Algeria" "Arizona" "Atacama" "Australia" \
 # Make plots
   mkdir -p plots
   foreach site (`echo $sites`)
-   ./plotoptics.py --name ./AerosolOptics/$ver/x/optics_DU_grasp_$site.$ver.nomom.nc4
+   ./plotoptics_bins.py --name ./AerosolOptics/$ver/x/optics_DU_grasp_$site.$ver.nomom.nc4
   end
