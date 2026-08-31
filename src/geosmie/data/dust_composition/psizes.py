@@ -6,7 +6,7 @@
 import numpy as np
 
 nbin  = 8
-sigma = 1.5
+sigmaarr = [1.5,1.5,1.5,1.5,1.8,2.0,2.2,2.4]
 rhop  = 2600.  # kg m-3
 reff  = [0.14, 0.24, 0.45, 0.8, 1.4, 2.4, 4.5, 8.0]  # effective radius [um]
 cpi = 4./3.*np.pi
@@ -131,22 +131,22 @@ if __name__ == "__main__":
     with open("out.txt","w") as f:
         f.write('  "r0": [')
         for i in range(0,nbin):
-            rn = rnum(reff[i],sigma)  # still microns
+            rn = rnum(reff[i],sigmaarr[i])  # still microns
             r0 = rn/1.e6
             printv(f,r0,i)
 
 
         f.write('  "rmax0": [')
         for i in range(0,nbin):
-            rn = rnum(reff[i],sigma)  # still microns
-            rmin, rmax = mostmass(rn,sigma)
+            rn = rnum(reff[i],sigmaarr[i])  # still microns
+            rmin, rmax = mostmass(rn,sigmaarr[i])
             rmax0 = rmax/1.e6
             printv(f,rmax0,i)
    
         f.write('  "rmin0": [')
         for i in range(0,nbin):
-            rn = rnum(reff[i],sigma)  # still microns
-            rmin, rmax = mostmass(rn,sigma)
+            rn = rnum(reff[i],sigmaarr[i])  # still microns
+            rmin, rmax = mostmass(rn,sigmaarr[i])
             rmin0 = rmin/1.e6
             printv(f,rmin0,i)
 
@@ -156,7 +156,7 @@ if __name__ == "__main__":
 
         f.write('  "sigma": [')
         for i in range(0,nbin):
-           printv(f,sigma,i)
+           printv(f,sigmaarr[i],i)
 
         f.write('  "fracs": [')
         for i in range(0,nbin):
