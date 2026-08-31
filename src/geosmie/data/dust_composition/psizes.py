@@ -113,17 +113,23 @@ def mostmass(rn,sigma,thresh=0.999):
 
     return rmin, rmax
 
-def printv(f,val,i,format=True):
+def printv(f,val,i,format=True,last=False):
     if format:
         if i < nbin-1:
             f.write("[%10.4e],"%val)
         else:
-            f.write("[%10.4e]],\n"%val)
+            if last:
+                f.write("[%10.4e]]\n"%val)
+            else:
+                f.write("[%10.4e]],\n"%val)
     else:
         if i < nbin-1:
             f.write("%d,"%val)
         else:
-            f.write("%d],\n"%val)
+            if last:
+                f.write("%d]\n"%val)
+            else:
+                f.write("%d],\n"%val)
     return
 
 
@@ -160,6 +166,6 @@ if __name__ == "__main__":
 
         f.write('  "fracs": [')
         for i in range(0,nbin):
-            printv(f,1.0,i)
+            printv(f,1.0,i,last=True)
 
     f.close()
