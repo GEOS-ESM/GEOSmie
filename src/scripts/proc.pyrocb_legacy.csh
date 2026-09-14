@@ -1,7 +1,7 @@
 #!/bin/tcsh
 
 # setup environment
-setenv SRC_DIR /home/colarco/sandbox/GEOSmie
+setenv SRC_DIR @SRCDIR
 setenv PYTHONPATH ${SRC_DIR}/install/lib/Python
 
 source $SRC_DIR/env@/g5_modules
