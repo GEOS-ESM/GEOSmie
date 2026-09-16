@@ -3,9 +3,15 @@
 # Run cmake with reasonable defaults. Why make the user do all these steps?
 #
 
+set host = `uname -n`
+set FORTRAN = ifort
+if ($host == "bender.gsfc.nasa.gov") then
+set FORTRAN = gfortran
+endif
+
 source env@/g5_modules # to be sure
 mkdir -p build
 cd build
 cmake .. -DBASEDIR=$BASEDIR/`uname -s` \
-         -DCMAKE_Fortran_COMPILER=ifort \
+         -DCMAKE_Fortran_COMPILER=$FORTRAN \
          -DCMAKE_INSTALL_PREFIX=../install

@@ -139,7 +139,7 @@ class OPTICS(object):
         plt.suptitle(self.fname+' [%3d nm]'%(wave))
         plt.tight_layout(pad=4)
 #            plt.show()
-        plt.savefig(self.fname + '_wav%04dnm.png'%(wave))
+        plt.savefig('plots/'+self.fname + '_wav%04dnm.png'%(wave))
 
 
 
