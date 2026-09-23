@@ -18,6 +18,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - added dust composition experimental codes and support files
 
 ### Changed
+- Make bandaverage particle property variables dimensions consistent 
+  with monochromatic table (e.g., area, rUp, ...). This is zero-diff
+  to optical properties, but is a structural change to these 
+  variables in bandaverage table so we bump the version from
+  v2.x.0 -> v2.x.1 and change scripts
 
 ### Removed
 
