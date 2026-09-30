@@ -6,11 +6,11 @@ setenv PYTHONPATH ${SRC_DIR}/install/lib/Python
 
 source $SRC_DIR/env@/g5_modules
 
-# Script to reproduce v2.2.0 optics tables
+# Script to reproduce v2.1.1 optics tables
 # JSON files live in geosparticles
-# Output will be placed in AerosolOptics/v2.2.0/x directory
+# Output will be placed in AerosolOptics/v2.1.0/x directory
 
-set ver = "v2.2.0"
+set ver = "v2.1.1"
 
 mkdir $ver
 mkdir -p ./AerosolOptics/$ver/x
@@ -21,8 +21,8 @@ mkdir -p ./AerosolOptics/$ver/x
   ln -s ${PWD}/geosparticles/ni.json  $ver/NI.$ver.json
   ln -s ${PWD}/geosparticles/su.json  $ver/SU.$ver.json
   ln -s ${PWD}/geosparticles/ss.json  $ver/SS.$ver.json
-  ln -s ${PWD}/geosparticles/experimental/brc_oracles_bcgf_low3.json $ver/BR.$ver.json
-  ln -s ${PWD}/geosparticles/du-grasp_spheroid.json $ver/DU.$ver.json
+  ln -s ${PWD}/geosparticles/brc.json $ver/BR.$ver.json
+  ln -s ${PWD}/geosparticles/du-grasp_spheroid-lognormal.json $ver/DU.$ver.json
 
 # Run the cases
 
