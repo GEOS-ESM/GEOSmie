@@ -8,7 +8,7 @@ source $SRC_DIR/env@/g5_modules
 
 # Script to reproduce v2.2.1 optics tables
 # JSON files live in geosparticles
-# Output will be placed in AerosolOptics/v2.2.0/x directory
+# Output will be placed in AerosolOptics/v2.2.1/x directory
 
 set ver = "v2.2.1"
 
