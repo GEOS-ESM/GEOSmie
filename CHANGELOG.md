@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - fixed band handling when making legacy format tables
 - fixed pointers to source directory in various processing scripts
+- fixed definitions of rUp, rLow, etc. in bandaverage file to make
+  consistent with monochromatic files
 
 ### Added
 - added RRTMGP band file production to scripting chain
