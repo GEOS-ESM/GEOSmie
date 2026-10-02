@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - added processing script for v2.2.0 optics which updates
   BRC optics table
 - added dust composition experimental codes and support files
+- added new variables to produced files that store binwise
+  mass and number fractions < 1, 2.5, and 10 um diameter
 
 ### Changed
 
