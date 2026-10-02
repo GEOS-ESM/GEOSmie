@@ -18,7 +18,8 @@ scatkeys = ['p11', 'p12', 'p22', 'p33', 'p34', 'p44']
 scalarkeys = ['qext', 'qsca', 'qabs', 'qb', 'g', 'csca', 'cext']
 extrakeys = ['ssa', 'bsca', 'bext', 'bbck', 'refreal', 'refimag', 'lidar_ratio']
 elekeys = ['pback']
-nlscalarkeys = ['mass', 'volume', 'area', 'rEff', 'rMass', 'rhop', 'growth_factor', 'rLow', 'rUp']
+nlscalarkeys = ['mass', 'volume', 'area', 'rEff', 'rMass', 'rhop', 'growth_factor', 
+                'rLow', 'rUp','fnum1','fnum25','fnum10','fmass1','fmass25','fmass10']
 
 allkeys = scatkeys + scalarkeys + extrakeys + elekeys + nlscalarkeys
 
@@ -314,7 +315,24 @@ def createNCDF(ncdfID, oppfx, rarr, rharr, lambarr, ang, oppclassic):
   vardict['rLow'] = {'units': 'm', \
   'long_name': 'lower edge of radius bin'
   }
-
+  vardict['fnum1'] = {'units': 'fraction', \
+  'long_name': 'fraction of bin number < 1 um diameter'
+  }
+  vardict['fnum25'] = {'units': 'fraction', \
+  'long_name': 'fraction of bin number < 2.5 um diameter'
+  }
+  vardict['fnum10'] = {'units': 'fraction', \
+  'long_name': 'fraction of bin number < 10 um diameter'
+  }
+  vardict['fmass1'] = {'units': 'fraction', \
+  'long_name': 'fraction of bin mass < 1 um diameter'
+  }
+  vardict['fmass25'] = {'units': 'fraction', \
+  'long_name': 'fraction of bin mass < 2.5 um diameter'
+  }
+  vardict['fmass10'] = {'units': 'fraction', \
+  'long_name': 'fraction of bin mass < 10 um diameter'
+  }
   vardict['pback'] = {'units': 'dimensionless', \
   'long_name': 'phase function in backscatter direction, ordered as P11, P12, P33, P34, P22, P44' 
   }
@@ -395,8 +413,14 @@ def createNCDF(ncdfID, oppfx, rarr, rharr, lambarr, ang, oppclassic):
   "area": "noLambdaScalarScattering",\
   "rEff": "noLambdaScalarScattering",\
   "rMass": "noLambdaScalarScattering",\
-  "rUp": "noLambdaScalarScattering",\
+  "rUp" : "noLambdaScalarScattering",\
   "rLow": "noLambdaScalarScattering",\
+  "fnum1" : "noLambdaScalarScattering",\
+  "fnum25": "noLambdaScalarScattering",\
+  "fnum10": "noLambdaScalarScattering",\
+  "fmass1" : "noLambdaScalarScattering",\
+  "fmass25": "noLambdaScalarScattering",\
+  "fmass10": "noLambdaScalarScattering",\
   "pback": "elementScattering",\
   "rhop": "noLambdaScalarScattering",\
   "growth_factor": "noLambdaScalarScattering",\
@@ -946,7 +970,6 @@ def fun(partID0, datatype, oppfx, oppclassic):
               ret['bbck'] = ret['bbck'] * ret['rEff']/reff
               ret['rEff'] = reff
 
-
         qsca = np.array(ret['qsca'])
         qext = np.array(ret['qext'])
         qb = np.array(ret['qb'])
@@ -1075,6 +1098,12 @@ def integratePSD(xxarr, rawret, psd, fracs, lam, reff0, rhop0, rhop):
   ret['bext'] = 0.
   ret['bbck'] = 0.
   ret['lidar_ratio'] = 0.
+  ret['fnum1']  = 0.
+  ret['fnum25'] = 0.
+  ret['fnum10'] = 0.
+  ret['fmass1']  = 0.
+  ret['fmass25'] = 0.
+  ret['fmass10'] = 0.
 
   totarea = 0
 
@@ -1118,6 +1147,16 @@ def integratePSD(xxarr, rawret, psd, fracs, lam, reff0, rhop0, rhop):
     thisret['mass'] = mass
     thisret['volume'] = volume
     thisret['rEff'] = reff
+#   Number fractions less than r (d/2) in terms of diameter
+    thisret['fnum1']  = np.sum(drdndr[np.where(rrarr<0.5e-6)])/num
+    thisret['fnum25'] = np.sum(drdndr[np.where(rrarr<1.25e-6)])/num
+    thisret['fnum10'] = np.sum(drdndr[np.where(rrarr<5.0e-6)])/num
+#   Mass (Volume) fractions less than r (d/2) in terms of diameter
+    thisret['fmass1']  = np.sum(rarr3[np.where(rrarr<0.5e-6)])/np.sum(rarr3)
+    thisret['fmass25'] = np.sum(rarr3[np.where(rrarr<1.25e-6)])/np.sum(rarr3)
+    thisret['fmass10'] = np.sum(rarr3[np.where(rrarr<5.0e-6)])/np.sum(rarr3)
+
+
 
     reff_mass = np.sum(rarr4) / np.sum(rarr3)
     thisret['rMass'] = 4. / 3. * np.pi * rhop * reff_mass ** 3.

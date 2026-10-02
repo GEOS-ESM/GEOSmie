@@ -159,7 +159,7 @@ def create_experiment_directory():
         change_env_python("utils",experiment_directory)
 
     # Get the template script
-    nscript = "proc.v2.2.0.csh"
+    nscript = "proc.v2.2.1.csh"
     script_name = input(f"Provide the script name [default: {nscript}]:  ")
     script_name = script_name.strip()
     if not script_name:

@@ -10,12 +10,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - fixed band handling when making legacy format tables
 - fixed pointers to source directory in various processing scripts
+- fixed definitions of rUp, rLow, etc. in bandaverage file to make
+  consistent with monochromatic files
 
 ### Added
 - added RRTMGP band file production to scripting chain
 - added processing script for v2.2.0 optics which updates
   BRC optics table
 - added dust composition experimental codes and support files
+- added new variables to produced files that store binwise
+  mass and number fractions < 1, 2.5, and 10 um diameter
 
 ### Changed
 
