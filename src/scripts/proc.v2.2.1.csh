@@ -2,7 +2,7 @@
 #SBATCH --time=12:00:00
 ##SBATCH --nodes=1 --ntasks-per-node=125
 #SBATCH --ntasks=12
-#SBATCH --job-name=GEOSmie_v2.1.1
+#SBATCH --job-name=GEOSmie_v2.2.1
 #SBATCH --account=s2191
 
 # setup environment
