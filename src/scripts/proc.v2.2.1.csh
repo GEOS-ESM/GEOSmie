@@ -1,4 +1,9 @@
 #!/bin/tcsh
+#SBATCH --time=12:00:00
+##SBATCH --nodes=1 --ntasks-per-node=125
+#SBATCH --ntasks=12
+#SBATCH --job-name=GEOSmie_v2.1.1
+#SBATCH --account=s2191
 
 # setup environment
 setenv SRC_DIR @SRCDIR
@@ -27,15 +32,15 @@ mkdir -p ./AerosolOptics/$ver/x
 # Run the cases
 
 # All wavelengths
-  foreach XX (DU BC OC SU BR NI SS)
-   ./runoptics.py --name $ver/$XX.$ver.json --dest=$ver> $ver/optics_$XX.$ver.txt &
-  end
+  set json = `\ls -1 $ver/*.$ver.json`
+  prund.pl -H `hostname` -d `echo $json` &
+  mpirun -np 12 prund.pl -H `hostname` ./runoptics.py --name %s --dest=$ver> $ver/optics_$ver.txt
   wait
 
 # Add phase matrices
-  foreach XX (DU BC OC SU BR NI SS)
-   ./rungsf.py --filename $ver/optics_$XX.$ver.nomom.nc4 --dest=$ver > $ver/optics_$XX.$ver.gsf.txt &
-  end
+  set infile = `\ls -1 $ver/*.$ver.nomom.nc4`
+  prund.pl -H `hostname` -d `echo $infile` &
+  mpirun -np 12 ./rungsf.py --filename %s --dest=$ver > $ver/optics_$ver.gsf.txt
   wait
 
 # Bands
