@@ -7,5 +7,8 @@
   file(GLOB scripts *sh)
   install(PROGRAMS ${scripts} DESTINATION bin)
 
+  file(GLOB scripts *pl)
+  install(PROGRAMS ${scripts} DESTINATION bin)
+
   file(GLOB scripts *.py)
   install(PROGRAMS ${scripts} DESTINATION bin)
