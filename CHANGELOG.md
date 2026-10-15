@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- Consolidated band average file changes from previous with addition of
+  mass and number fractions
 
 ### Added
 
