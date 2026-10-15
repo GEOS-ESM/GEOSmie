@@ -249,7 +249,7 @@ def fun(data, part, opfn, mode, useSolar, noIR):
 
   # add low and high limit information for bands
   # convert to wavelength if needed
-  if mode == 'RRTMG':
+  if (mode == 'RRTMG') or (mode == 'RRTMGP'):
     # convert from wavenumber to wavelength
     lBandLow = np.array(lBandLow) ** (-1) * 0.01
     lBandUp = np.array(lBandUp) ** (-1) * 0.01
@@ -279,14 +279,8 @@ def fun(data, part, opfn, mode, useSolar, noIR):
     opncdf.createVariable(var, 'f8', (radiusNm))
     opncdf.variables[var][:] = data.variables[var][:]
 
-  radvars2 = ['rLow', 'rUp']
-  # need to drop rh dimension for these variables
-  for var in radvars2:
-    opncdf.createVariable(var, 'f8', (radiusNm))
-    opncdf.variables[var][:] = data.variables[var][:, 0]
-
-  # variables that have dimensions radius, rh (rEff, rMass)
-  radrhvars = ['rEff', 'rMass']
+  # variables that have dimensions (radius, rh)
+  radrhvars = ['rEff', 'rMass','rLow', 'rUp','fnum1','fnum25','fnum10','fmass1','fmass25','fmass10']
   for var in radrhvars:
     opncdf.createVariable(var, 'f8', (radiusNm, 'rh'))
     opncdf.variables[var][:] = data.variables[var][:]

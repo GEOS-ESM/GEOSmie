@@ -1,0 +1,25 @@
+Files are in wsv format. First line is header:
+# lambda[um] m_real m_imaginary
+Following lines are three columns that follow 
+header.
+
+Key:
+ri-du_v15_6.wsv       - This is equivalent to Colarco et al. 2014
+                        (equivalent to what is used in GEOS and GEFS, 
+                        and similar to whatis used in ModelE for SW)
+ri-du_woodward.wsv    - This is from Woodward 2001 (used in IFS model)
+ri-du_balkanski.wsv   - This is the 1.5% hematite model from Balkanski 
+                        et al. 2007 and used in UM and MONARCH (SW only)
+ri-du_balkanski27.wsv - This is the 2.7% hematite model from Balkanski 
+                        et al. 2007 and used in AM4
+miam00                - This is differently formatted provided by OPAC
+                        and what is used in MONARCH (LW only), SILAM,
+                        MASINGAR and NAAPS. Look at last two columns
+                        for nref
+
+
+Balkanski, Y., Schulz, M., Claquin, T., and Guibert, S.: Reevaluation of Mineral aerosol radiative forcings suggests a better agreement with satellite and AERONET data, Atmos Chem Phys, 7, 81Ã¢€“95, https://doi.org/10.5194/acp-7-81-2007, 2007.
+
+Colarco, P. R., Nowottnick, E. P., Randles, C. A., Yi, B., Yang, P., Kim, K.-M., Smith, J. A., and Bardeen, C. G.: Impact of radiatively interactive dust aerosols in the NASA GEOS-5 climate model: Sensitivity to dust particle shape and refractive index, J Geophys Res Atmospheres, 119, 753 786, https://doi.org/10.1002/2013jd020046, 2014.
+
+Woodward, S.: Modeling the atmospheric life cycle and radiative impact of mineral dust in the Hadley Centre climate model, Journal Of Geophysical Research-Atmospheres, 106, 18155 18166, 2001.
