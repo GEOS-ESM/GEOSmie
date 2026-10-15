@@ -28,7 +28,7 @@ if __name__ == "__main__":
   (options, args) = parser.parse_args()
 
   if not os.path.exists(options.filename):
-    parser.error("Input file path (--filename) does not exist")
+    parser.error(f"Input file path (--filename {options.filename}) does not exist")
 
   convertncdf.convertFile(options.filename, options.dest, options.mode, options.rhop)
   print('Done!')

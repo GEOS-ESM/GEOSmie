@@ -85,10 +85,10 @@ which obtains the latest `git`, `CMake`, etc. modules needed to build.
 ##### Non-GMAO Desktops
 
 Target is for the 614 lab cluster, assumed to have `git`, `cmake`, and `mepo` installed.
-It is not necessary (or useful, or--really--possible) in this case to fuss about with 
-loading the `GEOSenv` module. The only notable modification needed then is to check
-`cmake_it` code and change the fortran reference as necessary; e.g., change `ifort` to
-`gfortran` on bender.
+Assuming that there is no need of the `module` commands above and the checkout and
+build will follow the directions below. The scripts handle the installed python and
+fortran compiler environment on the cluster machine `bender`. Modify if needed for
+a different machine.
 
 ### Use mepo to clone the repository
 
