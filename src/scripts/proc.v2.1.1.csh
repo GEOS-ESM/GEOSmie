@@ -2,6 +2,7 @@
 #SBATCH --time=12:00:00
 ##SBATCH --nodes=1 --ntasks-per-node=125
 #SBATCH --ntasks=12
+#SBATCH --partition=packable
 #SBATCH --job-name=GEOSmie_v2.1.1
 #SBATCH --account=s2191
 
@@ -40,7 +41,7 @@ mkdir -p ./AerosolOptics/$ver/x
 # Add phase matrices
   set infile = `\ls -1 $ver/*.$ver.nomom.nc4`
   prund.pl -H `hostname` -d `echo $infile` &
-  mpirun -np 12 ./rungsf.py --filename %s --dest=$ver > $ver/optics_$ver.gsf.txt
+  mpirun -np 12 prund.pl -H `hostname` ./rungsf.py --filename %s --dest=$ver #> $ver/optics_$ver.gsf.txt
   wait
 
 # Bands
