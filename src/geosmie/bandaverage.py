@@ -280,7 +280,8 @@ def fun(data, part, opfn, mode, useSolar, noIR):
     opncdf.variables[var][:] = data.variables[var][:]
 
   # variables that have dimensions (radius, rh)
-  radrhvars = ['rEff', 'rMass','rLow', 'rUp','fnum1','fnum25','fnum10','fmass1','fmass25','fmass10']
+  radrhvars = ['rEff', 'rMass','rLow', 'rUp','mass','volume','area','growth_factor','rhop',
+               'fnum1','fnum25','fnum10','fmass1','fmass25','fmass10']
   for var in radrhvars:
     opncdf.createVariable(var, 'f8', (radiusNm, 'rh'))
     opncdf.variables[var][:] = data.variables[var][:]
