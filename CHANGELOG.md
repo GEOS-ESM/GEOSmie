@@ -17,6 +17,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Deprecated
 
+## [2.2.1] - 2026-10-15
+
+### Fixed
+- Consolidated band average file changes from previous with addition of
+  mass and number fractions
+
+### Changed
+- Updated significantly the plotoptics_bins.py script
+
 
 ## [2.2.0] - 2026-10-15
 

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3.11
 """
 Read a geosmie optics table
 Plot basic single scattering properties
@@ -20,6 +20,30 @@ def find_nearest(array, value):
     array = np.asarray(array)
     idx = (np.abs(array - value)).argmin()
     return idx
+
+def singleplot(ax,x,y,ylabel,title,i40,i80,i95,waveum,legend=False):
+        def diamtosize(d):
+            return np.pi*d/waveum
+        def sizetodiam(x):
+            return waveum/np.pi/x
+        ax.set_xlabel('effective diameter [um]')
+        ax.set_ylabel(ylabel)
+        ax.set_title(title)
+        if(legend):
+            ax.plot(x[:,0],   y[:,0],label="RH=0%")
+            ax.plot(x[:,i40], y[:,i40],label="RH=40%")
+            ax.plot(x[:,i80], y[:,i80],label="RH=80%")
+            ax.plot(x[:,i95], y[:,i95],label="RH=95%")
+            ax.legend()
+        else:
+            ax.plot(x[:,0],   y[:,0])
+            ax.plot(x[:,i40], y[:,i40])
+            ax.plot(x[:,i80], y[:,i80])
+            ax.plot(x[:,i95], y[:,i95])
+        ax.set_xscale('log')
+        ax2 = ax.secondary_xaxis("top",functions=(diamtosize,sizetodiam))
+        ax2.set_xlabel('Size Parameter')
+        ax2.set_xscale('log')
 
 class OPTICS(object):
     def __init__(self,inFile,irh=None,ibin=None,iwav=None):
@@ -61,7 +85,7 @@ class OPTICS(object):
                        'bin': self.optics['bin'][self.ibin],
                       } 
 
-    def plot(self, wavelength=550, ibin=None):
+    def plot(self, wavelength=550, ibin=None,fig=None,axes=None,plotclose=True):
         """
         plot the single scattering properties
         assume all RH on file
@@ -81,66 +105,73 @@ class OPTICS(object):
         i80 = find_nearest(self.rh,0.8)
         i95 = find_nearest(self.rh,0.95)
         
+        waveum = wave/1000.
+        def diamtosize(d):
+            return np.pi*d/waveum
+        def sizetodiam(x):
+            return waveum/np.pi/x
+
         if ibin is None:
             ibin = np.arange(self.optics['bext'].sizes['bin'])
 
-        fig, axes = plt.subplots(nrows=3, ncols=2, figsize=(12, 16))
+        if(fig==None):
+            fig, axes = plt.subplots(nrows=2, ncols=3, figsize=(16, 12))
 
         bext = self.optics['bext'].isel(wavelength=iwav)
         bsca = self.optics['bsca'].isel(wavelength=iwav)
         bbck = self.optics['bbck'].isel(wavelength=iwav)
         b450 = self.optics['bext'].isel(wavelength=i450)
         b900 = self.optics['bext'].isel(wavelength=i900)
+        g    = self.optics['g'].isel(wavelength=iwav)
+        reff = self.optics["rEff"]*1e6
+        scatang = self.optics["ang"]
+        p11  = self.optics["p11"].isel(wavelength=iwav)
+        print(p11.shape)
         ang  = -np.log(b450/b900)/np.log(w450/w900)
 
-        # BEXT as function of bin
+        # BEXT as function of size
         ax = axes[0,0]
-        ax.set_xlabel('Bin')
-        ax.set_ylabel(r'$\beta_{ext} [m^2 g^{-1}]$')
-        ax.set_title('Extinction Efficiency [%3d nm]'%(wave))
-        ax.plot(ibin, bext[:,0]/1000., label='RH=0%')
-        ax.plot(ibin, bext[:,i40]/1000., label='RH=40%')
-        ax.plot(ibin, bext[:,i80]/1000., label='RH=80%')
-        ax.plot(ibin, bext[:,i95]/1000., label='RH=95%')
-        ax.legend()
+        x = 2.*reff
+        singleplot(ax,x,bext,r'$\beta_{ext} [m^2 g^{-1}]$',
+                  'Extinction Efficiency [%3d nm]'%(wave),i40,i80,i95,waveum,legend=True)
         
-        # SSA as function of RH
+        # SSA as function of size
         ax = axes[0,1]
-        ax.set_xlabel('Bin')
-        ax.set_ylabel('SSA')
-        ax.set_title('Single Scattering Albedo [%3d nm]'%(wave))
-        ax.plot(ibin, bsca[:,0]/bext[:,0])
-        ax.plot(ibin, bsca[:,i40]/bext[:,i40])
-        ax.plot(ibin, bsca[:,i80]/bext[:,i80])
-        ax.plot(ibin, bsca[:,i95]/bext[:,i95])
-        print(bsca[0:5,0],bext[0:5,0])
+        singleplot(ax,x,bsca/bext,"SSA",
+                   'Single Scattering Albedo [%3d nm]'%(wave),i40,i80,i95,waveum)
 
-        # Backscatter efficiency as function of RH
+        # Backscatter efficiency as function of size
+        ax = axes[0,2]
+        singleplot(ax,x,bbck/1000.,r'$\beta_{bck} [units]$',
+                   'Backscattering Efficiency [%3d nm]'%(wave),i40,i80,i95,waveum)
+
+        # Asymmetry factor as function of size
         ax = axes[1,0]
-        ax.set_xlabel('Bin')
-        ax.set_ylabel(r'$\beta_{bck} [units]$')
-        ax.set_title('Backscattering Efficiency [%3d nm]'%(wave))
-        ax.plot(ibin, bbck[:,0]/1000.)
-        ax.plot(ibin, bbck[:,i40]/1000.)
-        ax.plot(ibin, bbck[:,i80]/1000.)
-        ax.plot(ibin, bbck[:,i95]/1000.)
+        singleplot(ax,x,g,"g",
+                   'Asymmetry Parameter [%3d nm]'%(wave),i40,i80,i95,waveum)
 
-        # Angstrom coefficient as function of RH
+        # Angstrom coefficient as function of size
         ax = axes[1,1]
-        titlestr = 'Angstrom Exponent (%3d-%3d nm pair)'%(w450,w900)
-        ax.set_xlabel('Bin')
-        ax.set_ylabel(r'$\alpha_{%3d-%3d}$'%(w450,w900))
+        singleplot(ax,x,ang,r'$\alpha_{%3d-%3d}$'%(w450,w900),
+                   'Angstrom Exponent (%3d-%3d nm pair)'%(w450,w900),i40,i80,i95,waveum)
+
+        # P11
+        ax = axes[1,2]
+        titlestr = 'Phase Function'
+        ax.set_xlabel('scattering angle')
+        ax.set_ylabel('P11 [%3d nm]'%(wave))
         ax.set_title(titlestr)
-        ax.plot(ibin, ang[:,0])
-        ax.plot(ibin, ang[:,i40])
-        ax.plot(ibin, ang[:,i80])
-        ax.plot(ibin, ang[:,i95])
+        for jbin in ibin:
+            ax.plot(scatang,p11[jbin,0,:],label=f"bin {jbin}")
+        ax.set_yscale('log')
+        ax.legend()
+
        
         plt.suptitle(self.fname+' [%3d nm]'%(wave))
         plt.tight_layout(pad=4)
-#            plt.show()
-        plt.savefig('plots/'+self.fname + '_wav%04dnm.png'%(wave))
-
+        if(plotclose):
+            plt.savefig(self.fname + '_wav%04dnm.png'%(wave))
+        return fig, axes
 
 
 if __name__ == '__main__':
@@ -153,5 +184,6 @@ if __name__ == '__main__':
     fname = options.name
   
     optics = OPTICS(fname)
+    fig, axes = optics.plot(wavelength=10000)
     optics.plot()
 
