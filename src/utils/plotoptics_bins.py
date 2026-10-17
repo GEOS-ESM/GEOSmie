@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.11
+#!/usr/bin/env python3
 """
 Read a geosmie optics table
 Plot basic single scattering properties
