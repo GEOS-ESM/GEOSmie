@@ -18,7 +18,7 @@
 
 "mode": "kernel",
 "kernel_params": {
-  "path": "kernels/espinosa/kernel-Saito-Hexahedra_psi0.7_1degAngRes_V4.nc",
+  "path": "kernels/espinosa/kernel-Saito-Hexahedra_psi0.7_1degAngRes_V5.nc",
   "shape_dist": "data/kernel_shape_dist/saito_hexahedra.txt"
   }
 }
