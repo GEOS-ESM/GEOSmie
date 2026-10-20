@@ -21,7 +21,7 @@
 
 "mode": "kernel",
 "kernel_params": {
-  "path": "kernels/espinosa/kernel-grasp-v1.1.3-integrated_V4.nc",
+  "path": "kernels/espinosa/kernel-grasp-v1.1.3-integrated_V5.nc",
   "shape_dist": "data/kernel_shape_dist/spheroid_fixed_simple.txt"
   }
 }

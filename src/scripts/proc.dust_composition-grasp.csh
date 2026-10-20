@@ -23,7 +23,7 @@ set sites = ("Algeria" "Arizona" "Atacama" "Australia" \
 
 # Link the desired files
   foreach site (`echo $sites`)
-  sed 's/SITE/'"$site"'/g'  ${PWD}/geosparticles/experimental/dust_composition/du-lognorm.json > $ver/DU_grasp_$site.$ver.json
+  sed 's/SITE/'"$site"'/g'  ${PWD}/geosparticles/experimental/dust_composition/du-lognorm-grasp.json > $ver/DU_grasp_$site.$ver.json
   end
 
 # Run the cases
@@ -35,18 +35,17 @@ set sites = ("Algeria" "Arizona" "Atacama" "Australia" \
   wait
 
 # Add phase matrices
-#  foreach XX (DU_grasp_colarco DU_grasp_woodward DU_grasp_balkanski DU_grasp_balkanski27 DU_grasp_opac\
-#              DU_mie_colarco DU_mie_woodward DU_mie_balkanski DU_mie_balkanski27 DU_mie_opac)
-#   ./rungsf.py --filename $ver/optics_$XX.$ver.nomom.nc4 --dest=$ver > $ver/optics_$XX.$ver.gsf.txt &
-#  end
-#  wait
+  foreach site (`echo $sites`)
+   ./rungsf.py --filename $ver/optics_DU_grasp_$site.$ver.nomom.nc4 --dest=$ver > $ver/optics_DU_grasp_$site.$ver.gsf.txt &
+  end
+  wait
 
 # Bands
-#  foreach XX (DU_grasp_colarco DU_grasp_woodward DU_grasp_balkanski DU_grasp_balkanski27 DU_grasp_opac\
-#              DU_mie_colarco DU_mie_woodward DU_mie_balkanski DU_mie_balkanski27 DU_mie_opac)
-#   ./runbands.py --filename $ver/optics_$XX.$ver.nc4 --dest=$ver
-#   ./runbands.py --filename $ver/optics_$XX.$ver.nc4 --dest=$ver --bandmode=RRTMGP
-#  end
+  foreach site (`echo $sites`)
+   ./runbands.py --filename $ver/optics_DU_grasp_$site.$ver.nc4 --dest=$ver &
+   ./runbands.py --filename $ver/optics_DU_grasp_$site.$ver.nc4 --dest=$ver --bandmode=RRTMGP &
+  end
+  wait
 
 # Move files
   \mv -f $ver/*nc4 ./AerosolOptics/$ver/x
@@ -54,5 +53,6 @@ set sites = ("Algeria" "Arizona" "Atacama" "Australia" \
 # Make plots
   mkdir -p plots
   foreach site (`echo $sites`)
-   ./plotoptics_bins.py --name ./AerosolOptics/$ver/x/optics_DU_grasp_$site.$ver.nomom.nc4
+   ./plotoptics_bins.py --name ./AerosolOptics/$ver/x/optics_DU_grasp_$site.$ver.nomom.nc4 &
   end
+  wait
