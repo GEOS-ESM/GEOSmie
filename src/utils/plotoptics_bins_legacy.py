@@ -64,6 +64,14 @@ class OPTICS(object):
         self.optics = xr.load_dataset(inFile,engine="netcdf4")
         self.rh = self.optics['rh'].values
         self.wavelengths = self.optics['lambda'].values*1e9 # nm
+        self.bext = self.optics['bext']
+        self.bsca = self.optics['bsca']
+        self.bbck = self.optics['bbck']
+        self.g    = self.optics['g']
+        self.rEff = self.optics['rEff']
+        self.p11  = self.optics['p11']
+        self.p12  = self.optics['p12']
+        self.lidar_ratio = self.optics['lidar_ratio']
 
         if irh is None:
             self.irh = np.arange(self.optics.sizes['rh'])
@@ -86,7 +94,8 @@ class OPTICS(object):
         self.coords = {'rh': self.optics['rh'][self.irh],
                        'wavelength': self.optics['lambda'][self.iwav],
                        'radius': self.optics['radius'][self.ibin],
-                      } 
+                      }
+
         self.bext = self.bext.rename({'lambda': 'wavelength'})
         self.bsca = self.bsca.rename({'lambda': 'wavelength'})
         self.bbck = self.bbck.rename({'lambda': 'wavelength'})
@@ -94,6 +103,7 @@ class OPTICS(object):
         self.p11  = self.p11.rename({'lambda': 'wavelength'})
         self.p12  = self.p12.rename({'lambda': 'wavelength'})
         self.lidar_ratio = self.lidar_ratio.rename({'lambda': 'wavelength'})
+
 
     def plot(self, wavelength=550, ibin=None,fig=None,axes=None,plotclose=True):
         """
@@ -127,18 +137,18 @@ class OPTICS(object):
         if(fig==None):
             fig, axes = plt.subplots(nrows=2, ncols=3, figsize=(16, 12))
 
-        bext = self.optics['bext'].isel(wavelength=iwav)
-        bsca = self.optics['bsca'].isel(wavelength=iwav)
-        bbck = self.optics['bbck'].isel(wavelength=iwav)
-        b450 = self.optics['bext'].isel(wavelength=i450)
-        b900 = self.optics['bext'].isel(wavelength=i900)
-        g    = self.optics['g'].isel(wavelength=iwav)
-        reff = self.optics["rEff"]*1e6
+        bext = self.bext.isel(wavelength=iwav)
+        bsca = self.bsca.isel(wavelength=iwav)
+        bbck = self.bbck.isel(wavelength=iwav)
+        b450 = self.bext.isel(wavelength=i450)
+        b900 = self.bext.isel(wavelength=i900)
+        g    = self.g.isel(wavelength=iwav)
+        reff = self.rEff*1e6
         scatang = self.optics["ang"]
-        p11  = self.optics["p11"].isel(wavelength=iwav)
-        p12  = self.optics["p12"].isel(wavelength=iwav)
+        p11  = self.p11.isel(wavelength=iwav)
+        p12  = self.p12.isel(wavelength=iwav)
         ang  = -np.log(b450/b900)/np.log(w450/w900)
-        sr   = self.optics["lidar_ratio"].isel(wavelength=iwav)
+        sr   = self.lidar_ratio.isel(wavelength=iwav)
 
         # BEXT as function of size
         ax = axes[0,0]
