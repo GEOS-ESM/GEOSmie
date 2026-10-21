@@ -15,6 +15,7 @@ from scipy.special import eval_legendre
 from optparse import OptionParser
 import matplotlib
 #matplotlib.use('agg')
+from matplotlib.ticker import ScalarFormatter
 
 def find_nearest(array, value):
     array = np.asarray(array)
@@ -26,7 +27,7 @@ def singleplot(ax,x,y,ylabel,title,i40,i80,i95,waveum,legend=False):
             return np.pi*d/waveum
         def sizetodiam(x):
             return waveum/np.pi/x
-        ax.set_xlabel('effective diameter [um]')
+        ax.set_xlabel(r'effective diameter [$\mu$m]')
         ax.set_ylabel(ylabel)
         ax.set_title(title)
         if(legend):
@@ -44,6 +45,8 @@ def singleplot(ax,x,y,ylabel,title,i40,i80,i95,waveum,legend=False):
         ax2 = ax.secondary_xaxis("top",functions=(diamtosize,sizetodiam))
         ax2.set_xlabel('Size Parameter')
         ax2.set_xscale('log')
+        ax.xaxis.set_major_formatter(ScalarFormatter())
+        ax2.xaxis.set_major_formatter(ScalarFormatter())
 
 class OPTICS(object):
     def __init__(self,inFile,irh=None,ibin=None,iwav=None):
@@ -126,8 +129,9 @@ class OPTICS(object):
         reff = self.optics["rEff"]*1e6
         scatang = self.optics["ang"]
         p11  = self.optics["p11"].isel(wavelength=iwav)
-        print(p11.shape)
+        p12  = self.optics["p12"].isel(wavelength=iwav)
         ang  = -np.log(b450/b900)/np.log(w450/w900)
+        sr   = self.optics["lidar_ratio"].isel(wavelength=iwav)
 
         # BEXT as function of size
         ax = axes[0,0]
@@ -140,31 +144,39 @@ class OPTICS(object):
         singleplot(ax,x,bsca/bext,"SSA",
                    'Single Scattering Albedo [%3d nm]'%(wave),i40,i80,i95,waveum)
 
-        # Backscatter efficiency as function of size
+        # Lidar ratio
         ax = axes[0,2]
-        singleplot(ax,x,bbck/1000.,r'$\beta_{bck} [units]$',
-                   'Backscattering Efficiency [%3d nm]'%(wave),i40,i80,i95,waveum)
+        singleplot(ax,x,sr,r'$s_{r} [sr^{-1}]$',
+                   'Lidar Ratio [%3d nm]'%(wave),i40,i80,i95,waveum)
 
         # Asymmetry factor as function of size
         ax = axes[1,0]
         singleplot(ax,x,g,"g",
                    'Asymmetry Parameter [%3d nm]'%(wave),i40,i80,i95,waveum)
 
-        # Angstrom coefficient as function of size
-        ax = axes[1,1]
-        singleplot(ax,x,ang,r'$\alpha_{%3d-%3d}$'%(w450,w900),
-                   'Angstrom Exponent (%3d-%3d nm pair)'%(w450,w900),i40,i80,i95,waveum)
-
         # P11
-        ax = axes[1,2]
-        titlestr = 'Phase Function'
+        ax = axes[1,1]
+        titlestr = 'Phase Function [%3d nm]'%(wave)
         ax.set_xlabel('scattering angle')
-        ax.set_ylabel('P11 [%3d nm]'%(wave))
+        ax.set_ylabel('P11')
         ax.set_title(titlestr)
         for jbin in ibin:
             ax.plot(scatang,p11[jbin,0,:],label=f"bin {jbin}")
         ax.set_yscale('log')
+        ax.yaxis.set_major_formatter(ScalarFormatter())
         ax.legend()
+
+
+        # DOLP
+        ax = axes[1,2]
+        titlestr = 'Degree of Linear Polarization [%3d nm]'%(wave)
+        ax.set_xlabel('scattering angle')
+        ax.set_ylabel('DOLP')
+        ax.set_title(titlestr)
+        for jbin in ibin:
+            ax.plot(scatang,-p12[jbin,0,:]/p11[jbin,0,:],label=f"bin {jbin}")
+        ax.legend()
+
 
        
         plt.suptitle(self.fname+' [%3d nm]'%(wave))
