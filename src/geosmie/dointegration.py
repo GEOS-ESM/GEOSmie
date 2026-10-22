@@ -651,13 +651,14 @@ def calculatePSD(params, radind, onerh, rh, xxarr, drarr, rrat, lam):
     psd = []
     ref = []
     numminor = len(pparam['rMinMaj'][radind])
+    print(numminor,radind)
     for rMinorInd in range(numminor):
       rMinMaj = pparam['rMinMaj'][radind][rMinorInd] 
       rMaxMaj = pparam['rMaxMaj'][radind][rMinorInd]
       rMinUse = rMinMaj
       rMaxUse = rMaxMaj
-      rLow = rMinMaj
-      rUp = rMaxMaj
+      rLow    = np.min(pparam['rMinMaj'][radind][:])
+      rUp     = np.max(pparam['rMaxMaj'][radind][:])
       small = np.where(rarr < rMinMaj)[0]
       large = np.where(rarr > rMaxMaj)[0]
 
